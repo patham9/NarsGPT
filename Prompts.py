@@ -1,8 +1,8 @@
 belief_prompt = """
 Commands:
 Input(sentence) ... this relation is true in the sentence
-NegatedInput(sentence) ... the relation is claimed to be false in the sentence
-Deduc(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
+NegatedInput(sentence) ... the relation is false in the sentence
+Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
 Induce(premise1,premise2,conclusion) ... the sentence which can be induced from memory items.
 Abduce(premise1,premise2,conclusion) ... the sentence which can be abduced from memory items.
 
