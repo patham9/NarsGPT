@@ -56,7 +56,7 @@ def generate_prompt(prompt_start, prompt_end):
     return prompt_start + prompt_memory + prompt_end
 
 currentTime = 0
-def process_commands(cmd, question):
+def NAL_infer_to_memory(cmd, question):
     global memory
     for x in cmd:
         truth = (1.0, 0.9)
@@ -106,6 +106,7 @@ while True:
         inp = input().rstrip("\n")
     except:
         exit(0)
+    if "PrintInput" in sys.argv: print("Input:", inp)
     if inp.startswith("*volume="):
         continue
     if inp.startswith("*memory"):
@@ -126,4 +127,4 @@ while True:
         currentTime += 1
     if "PrintPrompt" in sys.argv: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-    process_commands(response['choices'][0]['message']['content'].split("\n"), isQuestion)
+    NAL_infer_to_memory(response['choices'][0]['message']['content'].split("\n"), isQuestion)
