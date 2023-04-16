@@ -26,7 +26,7 @@ import sys
 from NAL import *
 from Prompts import *
 import openai
-openai.api_key = "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"
+openai.api_key = "YOUR_KEY"
 
 memory = {} #the NARS-style long-term memory
 
@@ -99,7 +99,7 @@ def process_commands(cmd, question):
             if arg in memory:
                 lastUsed, useCount, TV = memory[arg]
                 memory[arg] = (currentTime, useCount+1, Truth_Revision(TV, truth) if useRevision else Truth_Choice(TV, truth))
-                print("//UPDATED", arg, memory[arg])
+                if "PrintUpdates" in sys.argv: print("//UPDATED", arg, memory[arg])
 
 while True:
     try:
