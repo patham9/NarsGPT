@@ -7,7 +7,7 @@ Induce(premise1,premise2,conclusion) ... the sentence which can be induced from 
 Abduce(premise1,premise2,conclusion) ... the sentence which can be abduced from memory items.
 
 Syllogistic inferences should especially be made according to the cases:
-Deduce("S is M", "M is P, "S is P"
+Deduce("S is M", "M is P", "S is P"
 Induce("A is B", "A is C", "C is B")
 Abduce("A is C", "B is C", "B is A")
 
