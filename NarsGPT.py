@@ -43,13 +43,15 @@ def attention_buffer(attention_buf_target_size = 20):
             relevant_item_list.remove(x) #so we won't select it as it is already part of mem
     i = 0
     while len(attention_buf) < attention_buf_target_size and i < len(relevant_item_list):
-        attention_buf.append(relevant_item_list[idx])
+        attention_buf.append(relevant_item_list[i])
         i += 1
     return attention_buf
 
 def generate_prompt(prompt_start, prompt_end):
     prompt_memory = ""
     buf = attention_buffer()
+    if len(buf) == 0:
+        prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
         certainty = Truth_Expectation(x[1][2])
         prompt_memory += f"i={i}: {x[0]}. certainty={certainty}\n"
@@ -120,7 +122,7 @@ while True:
         continue
     if inp.endswith("?"):
         isQuestion = True
-        send_prompt = generate_prompt(question_prompt, "\nThe question: ") + inp[:-1] + " according to Memory? Answer in a probabilistic sense and within 10 words."
+        send_prompt = generate_prompt(question_prompt, "\nThe question: ") + inp[:-1] + " according to Memory? Answer in a probabilistic sense and within 10 words based on memory content only."
     else:
         isQuestion = False
         send_prompt = generate_prompt(belief_prompt, "\nThe sentence: ") + inp + ". Do not forget to make inferences but only involve memory items as arguments!"
