@@ -43,7 +43,7 @@ def attention_buffer(attention_buf_target_size = 20):
             relevant_item_list.remove(x) #so we won't select it as it is already part of mem
     i = 0
     while len(attention_buf) < attention_buf_target_size and i < len(relevant_item_list):
-        attention_buf.append(memory_candidates_list[idx])
+        attention_buf.append(relevant_item_list[idx])
         i += 1
     return attention_buf
 
