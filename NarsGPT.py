@@ -22,11 +22,15 @@
  * THE SOFTWARE.
  * """
 
-import sys
 from NAL import *
 from Prompts import *
 import openai
 openai.api_key = "YOUR_KEY"
+
+PrintInputSentence = False
+PrintTruthValues = True
+PrintMemoryUpdates = False
+PrintGPTPrompt = False
 
 memory = {} #the NARS-style long-term memory
 
@@ -92,8 +96,8 @@ def NAL_infer_to_memory(cmd, question):
             if arg in memory and isDeduction:
                 useRevision = False #use choice here before we have stamps
             if isDeduction or isInduction or isAbduction or isInput:
-                if isNegated:
-                    print("Neg"+x)
+                if PrintTruthValues:
+                    print(f"{x} truth={truth}")
                 else:
                     print(x)
             if arg not in memory:
@@ -101,14 +105,14 @@ def NAL_infer_to_memory(cmd, question):
             if arg in memory:
                 lastUsed, useCount, TV = memory[arg]
                 memory[arg] = (currentTime, useCount+1, Truth_Revision(TV, truth) if useRevision else Truth_Choice(TV, truth))
-                if "PrintUpdates" in sys.argv: print("//UPDATED", arg, memory[arg])
+                if PrintMemoryUpdates: print("//UPDATED", arg, memory[arg])
 
 while True:
     try:
         inp = input().rstrip("\n")
     except:
         exit(0)
-    if "PrintInput" in sys.argv: print("Input:", inp)
+    if PrintInputSentence: print("Input:", inp)
     if inp.startswith("*volume="):
         continue
     if inp.startswith("*memory"):
@@ -127,6 +131,6 @@ while True:
         isQuestion = False
         send_prompt = generate_prompt(belief_prompt, "\nThe sentence: ") + inp + ". Do not forget to make inferences but only involve memory items as arguments!"
         currentTime += 1
-    if "PrintPrompt" in sys.argv: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
+    if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     NAL_infer_to_memory(response['choices'][0]['message']['content'].split("\n"), isQuestion)
