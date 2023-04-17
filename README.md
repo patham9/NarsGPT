@@ -13,14 +13,15 @@ Special features:
 - GPT uses the inference machinery based on its dynamic attention buffer content and a static part of the prompt which includes descriptions of NAL reasoning.
 - Structures: Attention buffer and long-term sentence memory which can go far beyond GPT's context window.
 - The attention buffer is a view of up to k relevant items in its memory decided based on recency, usefulness and relevance to other items in the attention buffer.
-- Certainty values are a summary of NAL truth values (based on truth-expectation formula) which GPT does not (need to) see.
+- The long-term memory can be set to be bounded, items with low use counter and last-used stamp the longest ago will be removed first.
+- Certainty values provide a summary of NAL truth values (based on truth-expectation formula) which is relevant in Q&A and later also in decision making.
 
 Compared to other projects such as AutoGPT:
 
 - NarsGPT is a proper solution for reasoning and memory maintenance to build more effective adaptive systems which could operate autonomously.
 - It builds on decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
 
-Already supported in v0.1:
+Already supported in v0.1.0:
 - NARS-like declarative inference and question answering with long-term memory storage
 
 TODO for later:
