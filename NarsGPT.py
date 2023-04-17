@@ -57,8 +57,21 @@ def generate_prompt(prompt_start, prompt_end):
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
-        certainty = Truth_Expectation(x[1][2])
-        prompt_memory += f"i={i}: {x[0]}. certainty={certainty}\n"
+        (f,c) = x[1][2]
+        flags = []
+        if c < 0.5:
+            flags.append("hypothetically")
+        else:
+            flags.append("knowingly")
+        if f < 0.3:
+            flags.append("false")
+        elif f > 0.7:
+            flags.append("true")
+        else:
+            flags.append("contradictory")
+        certainty = Truth_Expectation((f,c))
+        truthtype = '"' + " ".join(flags) + '"'
+        prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
 currentTime = 0
@@ -76,7 +89,7 @@ def NAL_infer_to_memory(cmd, question):
         isDeduction = x.startswith("Deduce(")
         isInduction = x.startswith("Induce(")
         isAbduction = x.startswith("Abduce(")
-        isInput = x.startswith("Input(")
+        isInput = x.startswith("Claim(")
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
             arg = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             if isDeduction or isInduction or isAbduction:
