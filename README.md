@@ -9,8 +9,6 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 ![NarsGPT Architecture](https://user-images.githubusercontent.com/8284677/232365471-faa3ccaf-5078-4830-905f-e8d7d520dde6.png)
 
-
-
 **Special features:**
 - Sentences are not stored in logical/structural form as in other NARS implementations, but in natural language sentences
 - Accurate truth calculations are carried out via an inference machinery invoked by GPT.
@@ -22,12 +20,13 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 **Compared to other GPT with Long-term memory projects such as AutoGPT:**
 
-- NarsGPT is a proper solution for reasoning and memory maintenance to build more effective adaptive systems which could operate autonomously.
+- Having the AI maintain a useful and evidentally supported set of beliefs through reasoning is the goal in this project, invoking software tools will come later.
+- NarsGPT is a proper solution for reasoning, truth maintenance and automated memory management, to build more effective adaptive systems which could operate autonomously.
 - It builds on decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
 
 **Compared to NARS with GPT as natural language channel:**
 
-- Compared to the quite successful https://github.com/opennars/OpenNARS-for-Applications/blob/master/misc/Python/english_to_narsese_gpt3.py approach ( which is shown in https://www.youtube.com/watch?v=cpu6TooJ0Dk ) this project makes no attempt to translate language into the Narsese formal language.
+- Compared to the quite successful https://github.com/opennars/OpenNARS-for-Applications/blob/master/misc/Python/english_to_narsese_gpt3.py approach ( which is shown in https://www.youtube.com/watch?v=cpu6TooJ0Dk ) this project makes no attempt to translate language into the Narsese formal language, no formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied.
 
 **Already supported:**
 - NARS-like declarative inference and question answering with long-term memory storage
