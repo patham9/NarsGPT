@@ -66,11 +66,11 @@ def generate_prompt(prompt_start, prompt_end):
         else:
             flags.append("knowingly")
         if f < 0.3:
-            flags.append("false")
+            flags.append("False")
         elif f > 0.7:
-            flags.append("true")
+            flags.append("True")
         else:
-            flags.append("contradictory")
+            flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
         prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
