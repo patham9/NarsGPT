@@ -1,0 +1,4 @@
+tweety is a bird
+Tweety is yellow
+birds are yellow?
+//expected: certainty=0.72
