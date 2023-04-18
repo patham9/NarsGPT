@@ -25,7 +25,7 @@
 from Truth import *
 from Stamp import *
 
-def NAL_Inference(memory, statements, isDeduction, isInduction, isAbduction):
+def NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction):
     if isDeduction or isInduction or isAbduction:
         if len(statements) != 3:
             return None

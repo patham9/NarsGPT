@@ -65,7 +65,7 @@ def invoke_commands(cmd, userQuestion):
                 stamp = [evidentalBaseID]
                 evidentalBaseID += 1
             else:
-                InferenceResult = NAL_Inference(memory, [x.strip().replace(".", "") for x in sentence.split(", ")], isDeduction, isInduction, isAbduction)
+                InferenceResult = NAL_Syllogisms(memory, [x.strip().replace(".", "") for x in sentence.split(", ")], isDeduction, isInduction, isAbduction)
                 if InferenceResult is not None:
                     sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
                     if Stamp_IsOverlapping: #not valid to infer due to stamp overlap
