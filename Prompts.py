@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  * """
 
-belief_prompt_start = """
+Prompts_belief_start = """
 Commands:
 Claim(sentence) ... this relation is claimed to be true in the sentence
 NegatedClaim(sentence) ... this relation is claimed to be false in the sentence with an explicit 'not' word
@@ -42,15 +42,15 @@ Please make sure that the word "not" is not included in your call, just use Inpu
 Memory:
 """
 
-belief_prompt_end = ". Do not forget to make inferences but only involve memory items as arguments, and raise one question!"
+Prompts_belief_end = ". Do not forget to make inferences but only involve memory items as arguments, and raise one question!"
 
-question_prompt_start = """
+Prompts_question_start = """
 Mention concrete memory contents with certainty values.
 Use the minimum involved certainty value.
 
 Memory:
 """
 
-question_prompt_end = " according to Memory? Answer in a probabilistic sense and within 10 words based on memory content only."
+Prompts_question_end = " according to Memory? Answer in a probabilistic sense and within 10 words based on memory content only."
 #If it should be allowed to consider GPT's 'weight-based' knowledge too, set IncludeGPTKnowledge=True, then the following is utilized:
-question_prompt_end_alternative = "? Answer in a probabilistic sense and within 10 words."
+Prompts_question_end_alternative = "? Answer in a probabilistic sense and within 10 words."

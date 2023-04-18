@@ -66,11 +66,11 @@ while True:
         continue
     if inp.endswith("?"):
         isQuestion = True
-        send_prompt = Memory_generate_prompt(memory, question_prompt_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
-                                            (question_prompt_end_alternative if IncludeGPTKnowledge else question_prompt_end)
+        send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
+                                            (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
     else:
         isQuestion = False
-        send_prompt = Memory_generate_prompt(memory, belief_prompt_start, "\nThe sentence: ", attention_buffer_size) + inp + belief_prompt_end
+        send_prompt = Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end
         currentTime += 1
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
