@@ -5,11 +5,16 @@
 A NARS implemented as a GPT model prompted to act like a Non-Axiomatic Logic reasoner, with NARS-based memory and control machinery implemented in Python.
 This is the first reasoning system implementation which uses GPT for reasoning with long-term memory. Also it is following NARS principles regarding evidence tracking, memory management and attentional control which allow the system to operate in a long-term manner while being able to learn and apply new knowledge effectively.
 
+**Features:**
+- Natural Q&A interaction with the user
+- System has no initial knowledge but you can simply teach it
+- System will make NAL inferences and will raise questions
+
 **Architecture**
 
 ![NarsGPT Architecture](https://user-images.githubusercontent.com/8284677/232365471-faa3ccaf-5078-4830-905f-e8d7d520dde6.png)
 
-**Special features:**
+**Technical aspects:**
 - Sentences are not stored in logical/structural form as in other NARS implementations, but in natural language sentences
 - Accurate truth calculations are carried out via an inference machinery invoked by GPT.
 - GPT uses the inference machinery based on its dynamic attention buffer content and a static part of the prompt which includes descriptions of NAL reasoning.
