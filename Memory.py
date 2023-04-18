@@ -29,10 +29,10 @@ import json
 def Memory_attention_buffer(memory, attention_buffer_size):
     attention_buf=[]
     relevant_item_list = list(memory.items())
-    #find attention_buf_target_size/2 newest items:
+    #find attention_buffer_size/2 newest items:
     relevant_item_list.sort(key=lambda x: -x[1][0])
     attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
-    #find additional attention_buf_target_size/2 useful items which were not already part of the newest
+    #find additional attention_buffer_size/2 useful items which were not already part of the newest
     relevant_item_list.sort(key=lambda x: -x[1][1])
     for x in attention_buf:
         if x in relevant_item_list:

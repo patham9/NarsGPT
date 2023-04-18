@@ -23,8 +23,6 @@
  * """
 
 import sys
-from Truth import *
-from NAL import *
 from Prompts import *
 from Memory import *
 from Control import *
