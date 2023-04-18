@@ -128,6 +128,9 @@ while True:
     if PrintInputSentence: print("Input:", inp)
     if inp.startswith("*volume="):
         continue
+    if inp.startswith("*prompt"):
+        print(generate_prompt("",""))
+        continue
     if inp.startswith("*memory"):
         for x in memory.items():
             print(x)
@@ -139,10 +142,10 @@ while True:
         continue
     if inp.endswith("?"):
         isQuestion = True
-        send_prompt = generate_prompt(question_prompt, "\nThe question: ") + inp[:-1] + " according to Memory? Answer in a probabilistic sense and within 10 words based on memory content only."
+        send_prompt = generate_prompt(question_prompt_start, "\nThe question: ") + inp[:-1] + question_prompt_end
     else:
         isQuestion = False
-        send_prompt = generate_prompt(belief_prompt, "\nThe sentence: ") + inp + ". Do not forget to make inferences but only involve memory items as arguments!"
+        send_prompt = generate_prompt(belief_prompt_start, "\nThe sentence: ") + inp + belief_prompt_end
         currentTime += 1
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
