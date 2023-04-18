@@ -7,7 +7,7 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 **Features:**
 - Natural Q&A interaction with the user
-- System has no initial knowledge but you can simply teach it
+- System has no initial knowledge but you can simply teach it (unless IncludeGPTKnowledge flag is set)
 - System will make NAL inferences and will raise questions
 
 **Architecture**
