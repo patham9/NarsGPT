@@ -38,10 +38,11 @@ PrintMemoryUpdates = False
 PrintGPTPrompt = False
 
 memory = {} #the NARS-style long-term memory
+currentTime = 0
 if exists(fname):
     with open(fname) as json_file:
         print("//Loaded memory content from", fname)
-        memory = json.load(json_file)
+        (memory, currentTime) = json.load(json_file)
 
 def attention_buffer(attention_buf_target_size = 20):
     attention_buf=[]
@@ -83,7 +84,6 @@ def generate_prompt(prompt_start, prompt_end):
         prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
-currentTime = 0
 def NAL_infer_to_memory(cmd, userQuestion):
     global memory
     for x in cmd:
@@ -161,4 +161,4 @@ while True:
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     NAL_infer_to_memory(response['choices'][0]['message']['content'].split("\n"), isQuestion)
     with open(fname, 'w') as f:
-            json.dump(memory, f)
+            json.dump((memory, currentTime), f)
