@@ -30,7 +30,7 @@ import json
 from os.path import exists
 import openai
 
-openai.api_key = "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"
+openai.api_key = "YOUR_KEY"
 fname = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
