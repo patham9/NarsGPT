@@ -22,11 +22,13 @@
  * THE SOFTWARE.
  * """
 
+import sys
 from NAL import *
 from Prompts import *
 import openai
 openai.api_key = "YOUR_KEY"
 
+IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False
 PrintTruthValues = True
 PrintMemoryUpdates = False
@@ -143,7 +145,7 @@ while True:
         continue
     if inp.endswith("?"):
         isQuestion = True
-        send_prompt = generate_prompt(question_prompt_start, "\nThe question: ") + inp[:-1] + question_prompt_end
+        send_prompt = generate_prompt(question_prompt_start, "\nThe question: ") + inp[:-1] + (question_prompt_end_alternative if IncludeGPTKnowledge else question_prompt_end)
     else:
         isQuestion = False
         send_prompt = generate_prompt(belief_prompt_start, "\nThe sentence: ") + inp + belief_prompt_end

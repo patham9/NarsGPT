@@ -28,3 +28,5 @@ Memory:
 """
 
 question_prompt_end = " according to Memory? Answer in a probabilistic sense and within 10 words based on memory content only."
+#If it should be allowed to consider GPT's 'weight-based' knowledge too, set IncludeGPTKnowledge=True, then the following is utilized:
+question_prompt_end_alternative = "? Answer in a probabilistic sense and within 10 words."
