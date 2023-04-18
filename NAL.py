@@ -26,20 +26,23 @@ from Truth import *
 from Stamp import *
 
 def NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction):
+    if statements[0] not in memory or statements[1] not in memory:
+        return None
+    premise1, premise2 = memory[statements[0]], memory[statements[1]]
     if isDeduction or isInduction or isAbduction:
         if len(statements) != 3:
             return None
         if statements[0] not in memory or statements[1] not in memory:
             return None
         if isDeduction:
-            truth = Truth_Deduction(memory[statements[0]][2], memory[statements[1]][2])
+            truth = Truth_Deduction(premise1[2], premise2[2])
         elif isInduction:
-            truth = Truth_Induction(memory[statements[0]][2], memory[statements[1]][2])
+            truth = Truth_Induction(premise1[2], premise2[2])
         elif isAbduction:
-            truth = Truth_Abduction(memory[statements[0]][2], memory[statements[1]][2])
-        stamp = Stamp_make(memory[statements[0]][3], memory[statements[1]][3])
-        Stamp_IsOverlapping = Stamp_hasOverlap(memory[statements[0]][3], memory[statements[1]][3])
-        conclusion = statements[2] #the conclusion to be put to memory
+            truth = Truth_Abduction(premise1[2], premise2[2])
+        stamp = Stamp_make(premise1[3], premise2[3])
+        Stamp_IsOverlapping = Stamp_hasOverlap(premise1[3], premise2[3])
+        conclusion = statements[2]
         return conclusion, truth, stamp, Stamp_IsOverlapping
     return None
 

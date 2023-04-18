@@ -27,14 +27,14 @@ Commands:
 Claim(sentence) ... this relation is claimed to be true in the sentence
 NegatedClaim(sentence) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
-Induce(premise1,premise2,conclusion) ... the sentence which can be induced from memory items.
-Abduce(premise1,premise2,conclusion) ... the sentence which can be abduced from memory items.
+Induce(premise1,premise2,conclusion) ... the hypothesis which can be induced from memory items.
+Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced from memory items.
 Question(question) ... raise a question regarding the sentence and other memory items.
 
 Syllogistic inferences should especially be made according to the cases:
 Deduce("S is M", "M is P", "S is P")
-Induce("A is B", "A is C", "C is B")
-Abduce("A is C", "B is C", "B is A")
+Induce("A is B", "A is C", "C is B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+Abduce("A is C", "B is C", "B is A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 
 Capture the complete sentence meaning with code that calls the above functions.
 Please make sure that the word "not" is not included in your call, just use Input and NegatedInput.
@@ -42,7 +42,7 @@ Please make sure that the word "not" is not included in your call, just use Inpu
 Memory:
 """
 
-Prompts_belief_end = ". Do not forget to make inferences but only involve memory items as arguments, and raise one question!"
+Prompts_belief_end = ". Do not forget to make speculative inferences but only involve memory items as arguments, and raise one question!"
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.

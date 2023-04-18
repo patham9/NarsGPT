@@ -45,7 +45,8 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
                 stamp = [evidentalBaseID]
                 evidentalBaseID += 1
             else:
-                InferenceResult = NAL_Syllogisms(memory, [x.strip().replace(".", "") for x in sentence.split(", ")], isDeduction, isInduction, isAbduction)
+                statements = [x.strip().replace(".", "") for x in sentence.split(", ")]
+                InferenceResult = NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction)
                 if InferenceResult is not None:
                     sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
                     if Stamp_IsOverlapping: #not valid to infer due to stamp overlap
