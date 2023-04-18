@@ -1,7 +1,7 @@
 """
  * The MIT License
  *
- * Copyright 2023 The OpenNARS authors.
+ * Copyright 2023 Patrick Hammer.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,26 +23,28 @@
  * """
 
 import sys
+from Truth import *
 from NAL import *
 from Prompts import *
 import json
 from os.path import exists
 import openai
 
-openai.api_key = "YOUR_KEY"
+openai.api_key = "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"
 fname = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
-PrintInputSentence = False
-PrintTruthValues = True
-PrintMemoryUpdates = False
-PrintGPTPrompt = False
+PrintInputSentence = False or "PrintInputSentence" in sys.argv
+PrintTruthValues = True or "PrintTruthValues" in sys.argv
+PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
+PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 
 memory = {} #the NARS-style long-term memory
 currentTime = 0
+evidentalBaseID = 1
 if exists(fname):
     with open(fname) as json_file:
         print("//Loaded memory content from", fname)
-        (memory, currentTime) = json.load(json_file)
+        (memory, currentTime, evidentalBaseID) = json.load(json_file)
 
 def attention_buffer(attention_buf_target_size = 20):
     attention_buf=[]
@@ -84,8 +86,18 @@ def generate_prompt(prompt_start, prompt_end):
         prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
-def NAL_infer_to_memory(cmd, userQuestion):
+def sentence_to_memory(sentence, truth, stamp):
     global memory
+    if sentence not in memory:
+        memory[sentence] = (0, 0, (0.5, 0.0), [])
+    if sentence in memory:
+        lastUsed, useCount, truth_existing, stamp_existing = memory[sentence]
+        truth_updated, stamp_updated = NAL_Revision_And_Choice(truth, stamp, truth_existing, stamp_existing)
+        memory[sentence] = (currentTime, useCount+1, truth_updated, stamp_updated)
+        if PrintMemoryUpdates: print("//UPDATED", sentence, memory[sentence])
+
+def invoke_commands(cmd, userQuestion):
+    global evidentalBaseID
     for x in cmd:
         truth = (1.0, 0.9)
         systemQuestion = x.startswith("Question(")
@@ -101,34 +113,23 @@ def NAL_infer_to_memory(cmd, userQuestion):
         isAbduction = x.startswith("Abduce(")
         isInput = x.startswith("Claim(")
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
-            arg = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            if isDeduction or isInduction or isAbduction:
-                statements = [x.strip().replace(".", "") for x in arg.split(", ")]
-                if len(statements) != 3:
-                    continue
-                if statements[0] not in memory or statements[1] not in memory:
-                    continue
-                if isDeduction:
-                    truth = Truth_Deduction(memory[statements[0]][2], memory[statements[1]][2])
-                elif isInduction:
-                    truth = Truth_Induction(memory[statements[0]][2], memory[statements[1]][2])
-                elif isAbduction:
-                    truth = Truth_Abduction(memory[statements[0]][2], memory[statements[1]][2])
-                arg = statements[2] #the conclusion is to pbe put to memory
-            useRevision = True
-            if arg in memory and isDeduction:
-                useRevision = False #use choice here before we have stamps
-            if isDeduction or isInduction or isAbduction or isInput:
-                if PrintTruthValues:
-                    print(f"{x} truth={truth}")
+            sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
+            if isInput:
+                stamp = [evidentalBaseID]
+                evidentalBaseID += 1
+            else:
+                InferenceResult = NAL_Inference(memory, [x.strip().replace(".", "") for x in sentence.split(", ")], isDeduction, isInduction, isAbduction)
+                if InferenceResult is not None:
+                    sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
+                    if Stamp_IsOverlapping: #not valid to infer due to stamp overlap
+                        continue
                 else:
-                    print(x)
-            if arg not in memory:
-                memory[arg] = (0, 0, (0.5, 0.0))
-            if arg in memory:
-                lastUsed, useCount, TV = memory[arg]
-                memory[arg] = (currentTime, useCount+1, Truth_Revision(TV, truth) if useRevision else Truth_Choice(TV, truth))
-                if PrintMemoryUpdates: print("//UPDATED", arg, memory[arg])
+                    continue
+            sentence_to_memory(sentence, truth, stamp)
+            if PrintTruthValues:
+                print(f"{x} truth={truth}")
+            else:
+                print(x)
 
 while True:
     try:
@@ -159,6 +160,6 @@ while True:
         currentTime += 1
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-    NAL_infer_to_memory(response['choices'][0]['message']['content'].split("\n"), isQuestion)
+    invoke_commands(response['choices'][0]['message']['content'].split("\n"), isQuestion)
     with open(fname, 'w') as f:
-            json.dump((memory, currentTime), f)
+        json.dump((memory, currentTime, evidentalBaseID), f)
