@@ -26,11 +26,13 @@ import sys
 from Truth import *
 from NAL import *
 from Prompts import *
+from Memory import *
 import json
 from os.path import exists
 import openai
 
 openai.api_key = "YOUR_KEY"
+attention_buffer_size = 20 #how large the system's attention buffer should be
 fname = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
@@ -45,56 +47,6 @@ if exists(fname):
     with open(fname) as json_file:
         print("//Loaded memory content from", fname)
         (memory, currentTime, evidentalBaseID) = json.load(json_file)
-
-def attention_buffer(attention_buf_target_size = 20):
-    attention_buf=[]
-    relevant_item_list = list(memory.items())
-    #find attention_buf_target_size/2 newest items:
-    relevant_item_list.sort(key=lambda x: -x[1][0])
-    attention_buf += reversed(relevant_item_list[0:int(attention_buf_target_size/2)]) #newer comes later in prompt
-    #find additional attention_buf_target_size/2 useful items which were not already part of the newest
-    relevant_item_list.sort(key=lambda x: -x[1][1])
-    for x in attention_buf:
-        if x in relevant_item_list:
-            relevant_item_list.remove(x) #so we won't select it as it is already part of mem
-    i = 0
-    while len(attention_buf) < attention_buf_target_size and i < len(relevant_item_list):
-        attention_buf = [relevant_item_list[i]] + attention_buf
-        i += 1
-    return attention_buf
-
-def generate_prompt(prompt_start, prompt_end):
-    prompt_memory = ""
-    buf = attention_buffer()
-    if len(buf) == 0:
-        prompt_memory = "EMPTY!"
-    for i,x in enumerate(buf):
-        (f,c) = x[1][2]
-        flags = []
-        if c < 0.5:
-            flags.append("hypothetically")
-        else:
-            flags.append("knowingly")
-        if f < 0.3:
-            flags.append("False")
-        elif f > 0.7:
-            flags.append("True")
-        else:
-            flags.append("Contradictory")
-        certainty = Truth_Expectation((f,c))
-        truthtype = '"' + " ".join(flags) + '"'
-        prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
-    return prompt_start + prompt_memory + prompt_end
-
-def sentence_to_memory(sentence, truth, stamp):
-    global memory
-    if sentence not in memory:
-        memory[sentence] = (0, 0, (0.5, 0.0), [])
-    if sentence in memory:
-        lastUsed, useCount, truth_existing, stamp_existing = memory[sentence]
-        truth_updated, stamp_updated = NAL_Revision_And_Choice(truth, stamp, truth_existing, stamp_existing)
-        memory[sentence] = (currentTime, useCount+1, truth_updated, stamp_updated)
-        if PrintMemoryUpdates: print("//UPDATED", sentence, memory[sentence])
 
 def invoke_commands(cmd, userQuestion):
     global evidentalBaseID
@@ -125,7 +77,7 @@ def invoke_commands(cmd, userQuestion):
                         continue
                 else:
                     continue
-            sentence_to_memory(sentence, truth, stamp)
+            Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates)
             if PrintTruthValues:
                 print(f"{x} truth={truth}")
             else:
@@ -137,26 +89,27 @@ while True:
     except:
         exit(0)
     if PrintInputSentence: print("Input:", inp)
-    if inp.startswith("*volume="):
+    if inp.startswith("*volume="): #TODO
         continue
     if inp.startswith("*prompt"):
-        print(generate_prompt("",""))
+        print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
     if inp.startswith("*memory"):
         for x in memory.items():
             print(x)
         continue
     if inp.startswith("*buffer"):
-        attention_buf = attention_buffer()
+        attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
         for x in attention_buf:
             print(x)
         continue
     if inp.endswith("?"):
         isQuestion = True
-        send_prompt = generate_prompt(question_prompt_start, "\nThe question: ") + inp[:-1] + (question_prompt_end_alternative if IncludeGPTKnowledge else question_prompt_end)
+        send_prompt = Memory_generate_prompt(memory, question_prompt_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
+                                            (question_prompt_end_alternative if IncludeGPTKnowledge else question_prompt_end)
     else:
         isQuestion = False
-        send_prompt = generate_prompt(belief_prompt_start, "\nThe sentence: ") + inp + belief_prompt_end
+        send_prompt = Memory_generate_prompt(memory, belief_prompt_start, "\nThe sentence: ", attention_buffer_size) + inp + belief_prompt_end
         currentTime += 1
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
