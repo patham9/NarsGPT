@@ -75,11 +75,12 @@ def generate_prompt(prompt_start, prompt_end):
     return prompt_start + prompt_memory + prompt_end
 
 currentTime = 0
-def NAL_infer_to_memory(cmd, question):
+def NAL_infer_to_memory(cmd, userQuestion):
     global memory
     for x in cmd:
         truth = (1.0, 0.9)
-        if question:
+        systemQuestion = x.startswith("Question(")
+        if userQuestion or systemQuestion:
             print(x)
         isNegated = False
         if x.startswith("Negated"):

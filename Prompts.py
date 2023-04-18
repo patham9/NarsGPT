@@ -5,6 +5,7 @@ NegatedClaim(sentence) ... this relation is claimed to be false in the sentence 
 Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
 Induce(premise1,premise2,conclusion) ... the sentence which can be induced from memory items.
 Abduce(premise1,premise2,conclusion) ... the sentence which can be abduced from memory items.
+Question(question) ... raise a question regarding the sentence and other memory items.
 
 Syllogistic inferences should especially be made according to the cases:
 Deduce("S is M", "M is P", "S is P")
@@ -17,7 +18,7 @@ Please make sure that the word "not" is not included in your call, just use Inpu
 Memory:
 """
 
-belief_prompt_end = ". Do not forget to make inferences but only involve memory items as arguments!"
+belief_prompt_end = ". Do not forget to make inferences but only involve memory items as arguments, and raise one question!"
 
 question_prompt_start = """
 Mention concrete memory contents with certainty values.
