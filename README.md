@@ -9,7 +9,12 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 ![NarsGPT Architecture](https://user-images.githubusercontent.com/8284677/232365471-faa3ccaf-5078-4830-905f-e8d7d520dde6.png)
 
-**Special features:**
+**High-level features:**
+- Natural Q&A interaction with the user
+- System has no initial knowledge but you can simply teach it
+- System will make NAL inferences and will raise questions
+
+**Technical features:**
 - Sentences are not stored in logical/structural form as in other NARS implementations, but in natural language sentences
 - Accurate truth calculations are carried out via an inference machinery invoked by GPT.
 - GPT uses the inference machinery based on its dynamic attention buffer content and a static part of the prompt which includes descriptions of NAL reasoning.
