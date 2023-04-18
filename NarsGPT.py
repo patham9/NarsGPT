@@ -39,7 +39,7 @@ def attention_buffer(attention_buf_target_size = 20):
     relevant_item_list = list(memory.items())
     #find attention_buf_target_size/2 newest items:
     relevant_item_list.sort(key=lambda x: -x[1][0])
-    attention_buf += relevant_item_list[0:int(attention_buf_target_size/2)]
+    attention_buf += reversed(relevant_item_list[0:int(attention_buf_target_size/2)]) #newer comes later in prompt
     #find additional attention_buf_target_size/2 useful items which were not already part of the newest
     relevant_item_list.sort(key=lambda x: -x[1][1])
     for x in attention_buf:
@@ -47,7 +47,7 @@ def attention_buffer(attention_buf_target_size = 20):
             relevant_item_list.remove(x) #so we won't select it as it is already part of mem
     i = 0
     while len(attention_buf) < attention_buf_target_size and i < len(relevant_item_list):
-        attention_buf.append(relevant_item_list[i])
+        attention_buf = [relevant_item_list[i]] + attention_buf
         i += 1
     return attention_buf
 
