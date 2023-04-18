@@ -1,4 +1,30 @@
+"""
+ * The MIT License
+ *
+ * Copyright 2023 Patrick Hammer.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * """
+
+from os.path import exists
 from NAL import *
+import json
 
 def Memory_attention_buffer(memory, attention_buffer_size):
     attention_buf=[]
@@ -48,3 +74,17 @@ def Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMem
         truth_updated, stamp_updated = NAL_Revision_And_Choice(truth, stamp, truth_existing, stamp_existing)
         memory[sentence] = (currentTime, useCount+1, truth_updated, stamp_updated)
         if PrintMemoryUpdates: print("//UPDATED", sentence, memory[sentence])
+
+def Memory_load(filename):
+    memory = {} #the NARS-style long-term memory
+    currentTime = 0
+    evidentalBaseID = 1
+    if exists(filename):
+        with open(filename) as json_file:
+            print("//Loaded memory content from", filename)
+            (memory, currentTime, evidentalBaseID) = json.load(json_file)
+    return (memory, currentTime, evidentalBaseID)
+
+def Memory_store(filename, memory, currentTime, evidentalBaseID):
+    with open(filename, 'w') as f:
+        json.dump((memory, currentTime, evidentalBaseID), f)

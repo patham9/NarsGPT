@@ -27,26 +27,21 @@ from Truth import *
 from NAL import *
 from Prompts import *
 from Memory import *
-import json
-from os.path import exists
 import openai
 
 openai.api_key = "YOUR_KEY"
 attention_buffer_size = 20 #how large the system's attention buffer should be
-fname = "mem.json" #the system's memory file
+filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
 PrintTruthValues = True or "PrintTruthValues" in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 
-memory = {} #the NARS-style long-term memory
-currentTime = 0
-evidentalBaseID = 1
-if exists(fname):
-    with open(fname) as json_file:
-        print("//Loaded memory content from", fname)
-        (memory, currentTime, evidentalBaseID) = json.load(json_file)
+for x in sys.argv:
+    if x.startswith("API_KEY="):
+        openai.api_key = x.split("API_KEY=")[1]
+(memory, currentTime, evidentalBaseID) = Memory_load(filename) #the NARS-style long-term memory
 
 def invoke_commands(cmd, userQuestion):
     global evidentalBaseID
@@ -114,5 +109,4 @@ while True:
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     invoke_commands(response['choices'][0]['message']['content'].split("\n"), isQuestion)
-    with open(fname, 'w') as f:
-        json.dump((memory, currentTime, evidentalBaseID), f)
+    Memory_store(filename, memory, currentTime, evidentalBaseID)
