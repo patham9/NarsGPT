@@ -27,6 +27,10 @@ from Memory import *
 def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
     AlreadyExecuted = set([])
     for x in cmd:
+        if len(x) < 3:
+            continue
+        if x[1] == "." and x[2] == " ": #1. Deduce( (it often outputs in a list like that)
+            x = " ".join(x.split(" ")[1:])
         if x in AlreadyExecuted or "hasproperty none" in x.lower() or "isa none" in x.lower() \
                                 or "none hasproperty" in x.lower() or "none isa" in x.lower(): #avoids some none calls
             continue

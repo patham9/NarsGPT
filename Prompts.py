@@ -37,7 +37,7 @@ Please make sure that the word "not" is not included in your call, just use the 
 Memory:
 """
 
-Prompts_belief_end = " Also raise one question!"
+Prompts_belief_end = "Encode all relations in the sentence, also raising one question!"
 
 Prompts_inference_start = """
 Commands:
@@ -45,7 +45,8 @@ Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from 
 Induce(premise1,premise2,conclusion) ... the hypothesis which can be induced from memory items.
 Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced from memory items.
 
-Syllogistic inferences should especially be made according to the cases:
+Rules: #Syllogistic inferences should especially be made according to the cases:
+
 Deduce("A isa B", "B isa C", "A isa C")
 Induce("A isa B", "A isa C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 Abduce("A isa C", "B isa C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
@@ -61,7 +62,7 @@ Abduce("A verb C", "B verb C", "B isa A") #speculative conclusion, very importan
 Memory:
 """
 
-Prompts_inference_end = ". Do not forget to make many speculative inferences but only involve memory items as arguments!"
+Prompts_inference_end = ". Do not forget to make inferences according to the rules but only involve memory items as arguments and do not create new words!"
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.

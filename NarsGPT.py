@@ -29,7 +29,7 @@ from Control import *
 import openai
 
 openai.api_key = "YOUR_KEY"
-attention_buffer_size = 40 #how large the system's attention buffer should be
+attention_buffer_size = 20 #how large the system's attention buffer should be
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
@@ -79,5 +79,4 @@ while True:
             PromptProcess(Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
         PromptProcess(Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
         currentTime += 1
-    
     Memory_store(filename, memory, currentTime, evidentalBaseID)
