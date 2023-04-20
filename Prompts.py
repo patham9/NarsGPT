@@ -33,6 +33,7 @@ Question(question) ... raise a question regarding the sentence and other memory 
 
 Capture the complete sentence meaning with code that calls the four functions, and only use a single word per argument.
 Please make sure that the word "not" is not included in your call, just use the functions and Negated functions instead.
+And use verbs for comparative relations!
 
 Memory:
 """
