@@ -23,26 +23,45 @@
  * """
 
 Prompts_belief_start = """
-Commands:
-Claim(sentence) ... this relation is claimed to be true in the sentence
-NegatedClaim(sentence) ... this relation is claimed to be false in the sentence with an explicit 'not' word
-Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
-Induce(premise1,premise2,conclusion) ... the hypothesis which can be induced from memory items.
-Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced from memory items.
+RelationClaim(noun,verb,noun)
+RelationClaim(noun,"IsA",noun)
+PropertyClaim(noun,"HasProperty", adjective)
+NegatedRelationClaim(noun,verb,noun) ... this relation is claimed to be false in the sentence with an explicit 'not' word
+NegatedRelationClaim(noun,"IsA",noun) ... this relation is claimed to be false in the sentence with an explicit 'not' word
+NegatedPropertyClaim(noun,"HasProperty",adjective) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 Question(question) ... raise a question regarding the sentence and other memory items.
 
-Syllogistic inferences should especially be made according to the cases:
-Deduce("S is M", "M is P", "S is P")
-Induce("A is B", "A is C", "C is B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-Abduce("A is C", "B is C", "B is A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-
-Capture the complete sentence meaning with code that calls the above functions.
-Please make sure that the word "not" is not included in your call, just use Input and NegatedInput.
+Capture the complete sentence meaning with code that calls the four functions, and only use a single word per argument.
+Please make sure that the word "not" is not included in your call, just use the functions and Negated functions instead.
 
 Memory:
 """
 
-Prompts_belief_end = ". Do not forget to make speculative inferences but only involve memory items as arguments, and raise one question!"
+Prompts_belief_end = " Also raise one question!"
+
+Prompts_inference_start = """
+Commands:
+Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
+Induce(premise1,premise2,conclusion) ... the hypothesis which can be induced from memory items.
+Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced from memory items.
+
+Syllogistic inferences should especially be made according to the cases:
+Deduce("A isa B", "B isa C", "A isa C")
+Induce("A isa B", "A isa C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+Abduce("A isa C", "B isa C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+
+Deduce("A isa B", "B HasProperty C", "A HasProperty C")
+Induce("A hasproperty B", "A hasproperty C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+Abduce("A hasproperty C", "B hasproperty C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+
+Deduce("A isa B", "B verb C", "A verb C")
+Induce("A verb B", "A verb C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+Abduce("A verb C", "B verb C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
+
+Memory:
+"""
+
+Prompts_inference_end = ". Do not forget to make many speculative inferences but only involve memory items as arguments!"
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.

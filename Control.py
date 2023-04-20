@@ -25,20 +25,27 @@
 from Memory import *
 
 def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
+    AlreadyExecuted = set([])
     for x in cmd:
+        if x in AlreadyExecuted or "hasproperty none" in x.lower() or "isa none" in x.lower() \
+                                or "none hasproperty" in x.lower() or "none isa" in x.lower(): #avoids some none calls
+            continue
+        AlreadyExecuted.add(x)
         truth = (1.0, 0.9)
         systemQuestion = x.startswith("Question(")
         if userQuestion or systemQuestion:
             print(x)
         isNegated = False
-        if x.startswith("Negated"):
+        if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
             isNegated = True
-            x = x[7:]
+            x = x[7:].replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
             truth = (0.0, 0.9)
+        if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
+            x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
         isDeduction = x.startswith("Deduce(")
         isInduction = x.startswith("Induce(")
         isAbduction = x.startswith("Abduce(")
-        isInput = x.startswith("Claim(")
+        isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             if isInput:
@@ -54,8 +61,9 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
                 else:
                     continue
             Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates)
+            printsentence = sentence if isInput else x
             if PrintTruthValues:
-                print(f"{x} truth={truth}")
+                print(f"{printsentence}. truth={truth}")
             else:
-                print(x)
+                print(printsentence)
     return evidentalBaseID
