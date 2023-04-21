@@ -48,15 +48,15 @@ Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced fro
 
 Rules: #Syllogistic inferences should especially be made according to the cases:
 
-Deduce("A isa B", "B isa C", "A isa C")
+Deduce("A isa B", "B isa C", "A isa C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
 Induce("A isa B", "A isa C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 Abduce("A isa C", "B isa C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 
-Deduce("A isa B", "B HasProperty C", "A HasProperty C")
+Deduce("A isa B", "B HasProperty C", "A HasProperty C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
 Induce("A hasproperty B", "A hasproperty C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 Abduce("A hasproperty C", "B hasproperty C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 
-Deduce("A isa B", "B verb C", "A verb C")
+Deduce("A isa B", "B verb C", "A verb C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
 Induce("A verb B", "A verb C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 Abduce("A verb C", "B verb C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
 
