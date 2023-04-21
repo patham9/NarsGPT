@@ -31,6 +31,8 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
             continue
         if x[1] == "." and x[2] == " ": #1. Deduce( (it often outputs in a list like that)
             x = " ".join(x.split(" ")[1:])
+        if "#" in x:
+            x = x.split("#")[0].strip()
         if x in AlreadyExecuted or "hasproperty none" in x.lower() or "isa none" in x.lower() \
                                 or "none hasproperty" in x.lower() or "none isa" in x.lower(): #avoids some none calls
             continue
@@ -47,6 +49,8 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
             x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
         isDeduction = x.startswith("Deduce(")
+        if isDeduction and " isa " not in x and " are " not in x:
+            continue
         isInduction = x.startswith("Induce(")
         isAbduction = x.startswith("Abduce(")
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
