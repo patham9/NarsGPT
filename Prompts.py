@@ -23,13 +23,12 @@
  * """
 
 Prompts_belief_start = """
-RelationClaim(noun,verb,noun)
-RelationClaim(noun,"IsA",noun)
-PropertyClaim(noun,"HasProperty", adjective)
+RelationClaim(noun,verb,noun) ... this relation is claimed to be true in the sentence
+RelationClaim(noun,"IsA",noun) ... this relation is claimed to be true in the sentence
+PropertyClaim(noun,"HasProperty", adjective) ... this relation is claimed to be true in the sentence
 NegatedRelationClaim(noun,verb,noun) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 NegatedRelationClaim(noun,"IsA",noun) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 NegatedPropertyClaim(noun,"HasProperty",adjective) ... this relation is claimed to be false in the sentence with an explicit 'not' word
-Question(question) ... raise a question regarding the sentence and other memory items.
 
 Capture the complete sentence meaning with code that calls the four functions, and only use a single word per argument.
 Please make sure that the word "not" is not included in your call, just use the functions and Negated functions instead.
@@ -38,32 +37,7 @@ And use verbs for comparative relations!
 Memory:
 """
 
-Prompts_belief_end = "Encode all relations in the sentence, also raising one question!"
-
-Prompts_inference_start = """
-Commands:
-Deduce(premise1,premise2,conclusion) ... the sentence which can be deduced from memory items.
-Induce(premise1,premise2,conclusion) ... the hypothesis which can be induced from memory items.
-Abduce(premise1,premise2,conclusion) ... the hypothesis which can be abduced from memory items.
-
-Rules: #Syllogistic inferences should especially be made according to the cases:
-
-Deduce("A isa B", "B isa C", "A isa C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
-Induce("A isa B", "A isa C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-Abduce("A isa C", "B isa C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-
-Deduce("A isa B", "B HasProperty C", "A HasProperty C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
-Induce("A hasproperty B", "A hasproperty C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-Abduce("A hasproperty C", "B hasproperty C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-
-Deduce("A isa B", "B verb C", "A verb C") #the last word of the first premise is required to be the same as the first word of the second premise!!!
-Induce("A verb B", "A verb C", "C isa B") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-Abduce("A verb C", "B verb C", "B isa A") #speculative conclusion, very important to use instead of Deduce when it matches!!!
-
-Memory:
-"""
-
-Prompts_inference_end = ". Do not forget to make inferences according to the rules but only involve memory items as arguments and do not create new words!"
+Prompts_belief_end = "Encode all relations in the sentence!"
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.

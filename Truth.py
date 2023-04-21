@@ -22,38 +22,5 @@
  * THE SOFTWARE.
  * """
 
-def Truth_w2c(w):
-    return w / (w + 1.0)
-
-def Truth_c2w(c):
-    return c / (1.0 - c)
-
 def Truth_Expectation(v):
     return (v[1] * (v[0] - 0.5) + 0.5)
-
-def Truth_Negation(v):
-    return (1-v[0], v[1])
-
-def Truth_Revision(v1, v2):
-    (f1, c1) = v1
-    (f2, c2) = v2
-    w1 = Truth_c2w(c1)
-    w2 = Truth_c2w(c2)
-    w = w1 + w2
-    if w == 0:
-        return (0.5, 0.0)
-    return (min(1.0, (w1 * f1 + w2 * f2) / w), 
-            min(0.99, max(max(Truth_w2c(w), c1), c2)))
-
-def Truth_Deduction(v1, v2):
-    (f1, c1) = v1
-    (f2, c2) = v2
-    return (f1*f2, f1*f2*c1*c2)
-
-def Truth_Abduction(v1, v2):
-    (f1, c1) = v1
-    (f2, c2) = v2
-    return (f2, Truth_w2c(f1 * c1 * c2))
-
-def Truth_Induction(v1, v2):
-    return Truth_Abduction(v2, v1)

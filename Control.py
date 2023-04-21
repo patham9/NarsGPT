@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
+def Control_cycle(currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -48,28 +48,12 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
             truth = (0.0, 0.9)
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
             x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
-        isDeduction = x.startswith("Deduce(")
-        isInduction = x.startswith("Induce(")
-        isAbduction = x.startswith("Abduce(")
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
-        if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
+        if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            if isInput:
-                stamp = [evidentalBaseID]
-                evidentalBaseID += 1
-            else:
-                statements = [x.strip().replace(".", "") for x in sentence.split(", ")]
-                InferenceResult = NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction)
-                if InferenceResult is not None:
-                    sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
-                    if Stamp_IsOverlapping: #not valid to infer due to stamp overlap
-                        continue
-                else:
-                    continue
-            Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates)
+            Memory_digest_sentence(currentTime, memory, sentence, truth, PrintMemoryUpdates)
             printsentence = sentence if isInput else x
             if PrintTruthValues:
                 print(f"{printsentence}. truth={truth}")
             else:
                 print(printsentence)
-    return evidentalBaseID

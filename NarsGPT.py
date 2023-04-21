@@ -40,15 +40,14 @@ PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-(memory, currentTime, evidentalBaseID) = Memory_load(filename) #the NARS-style long-term memory
-
+memory = {} #the NARS-style long-term memory
+currentTime = 1
 
 def PromptProcess(send_prompt, isQuestion):
-    global evidentalBaseID
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    evidentalBaseID = Control_cycle(memory, commands, isQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues)
+    Control_cycle(currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues)
 
 while True:
     try:
@@ -77,6 +76,6 @@ while True:
     else:
         if len(inp) > 0 and inp != "1":
             PromptProcess(Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
-        PromptProcess(Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
+        #PromptProcess(Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
         currentTime += 1
-    Memory_store(filename, memory, currentTime, evidentalBaseID)
+    #Memory_store(filename, memory, currentTime, evidentalBaseID)
