@@ -49,8 +49,6 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
             x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
         isDeduction = x.startswith("Deduce(")
-        if isDeduction and " isa " not in x and " are " not in x:
-            continue
         isInduction = x.startswith("Induce(")
         isAbduction = x.startswith("Abduce(")
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")

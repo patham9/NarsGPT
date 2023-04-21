@@ -35,6 +35,20 @@ def NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction):
         if statements[0] not in memory or statements[1] not in memory:
             return None
         if isDeduction:
+            #start additional guards for deductions:
+            if isDeduction and " isa " not in statements[0] + " " + statements[1] and \
+                               " are " not in statements[0] + " " + statements[1]:
+                return None
+            if len(statements[0].split(" ")) != 3 and len(statements[1].split(" ")) != 3:
+                return None
+            lastword_st0 = statements[0].split(" ")[-1]
+            firstword_st0 = statements[0].split(" ")[0]
+            lastword_st1 = statements[1].split(" ")[-1]
+            firstword_st1 = statements[1].split(" ")[0]
+            if lastword_st0 not in firstword_st1 and firstword_st1 not in lastword_st0 and \
+               lastword_st1 not in firstword_st0 and firstword_st0 not in lastword_st1:
+                   return None
+            #end deduction guards
             truth = Truth_Deduction(premise1[2], premise2[2])
         elif isInduction:
             truth = Truth_Induction(premise1[2], premise2[2])
