@@ -33,7 +33,7 @@ attention_buffer_size = 20 #how large the system's attention buffer should be
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
-PrintTruthValues = True or "PrintTruthValues" in sys.argv
+PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 
