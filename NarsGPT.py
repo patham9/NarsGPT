@@ -33,14 +33,15 @@ attention_buffer_size = 20 #how large the system's attention buffer should be
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
-PrintTruthValues = True or "PrintTruthValues" in sys.argv
+PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
+NarseseByONA = True and "NarseseByGPT" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-memory = {} #the NARS-style long-term memory
+memory = {} #the NARS-style long-term memory #TODO load memory
 currentTime = 1
 
 def PromptProcess(inp, send_prompt, isQuestion):
@@ -60,6 +61,11 @@ while True:
     if inp.startswith("*prompt"):
         print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
+    if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
+        ProcessInput(currentTime, memory, inp)
+        if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
+            currentTime += 1
+        continue
     if inp.startswith("*memory"):
         for x in memory.items():
             print(x)
@@ -74,10 +80,9 @@ while True:
                                             (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         PromptProcess(inp, send_prompt, True)
     else:
-        if len(inp) > 0 and inp != "1":
+        if len(inp) > 0 and not inp.isdigit():
             PromptProcess(inp, Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
         else:
-            NAR.AddInput("1", Print=False)
-        #PromptProcess(Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
+            ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         currentTime += 1
-    #Memory_store(filename, memory, currentTime, evidentalBaseID)
+    #Memory_store(filename, memory, currentTime, evidentalBaseID) #TODO save memory

@@ -72,15 +72,18 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
             flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
-        term = x[0][1:-1]
+        term = x[0][1:-1] if "<" in x[0] else x[0]
         if " * " in term:
             arg1 = term.split("(")[1].split(" * ")[0].strip()
             arg2 = term.split(")")[0].split(" * ")[1].strip()
             relarg = term.split(" --> ")[1].strip()
             term = arg1 + " " + relarg + " " + arg2
         else:
-            term = term.replace(" --> ", " isa ")
-        prompt_memory += f"i={i}: {term}. truthtype={truthtype} certainty={certainty}\n"
+            term = term.replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
+        timeterm = ""
+        if x[1][3] != "eternal":
+            timeterm = "t=" + x[1][3] + " "
+        prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
 from nltk import WordNetLemmatizer
@@ -94,14 +97,14 @@ def Lemmatize(word, tag):
             return "isa"
     return ret
 
-def ProcessInput(currentTime, memory, term, punctuation_tv, backups = ["input", "answers", "derivations"]):
-    ret = NAR.AddInput(term + punctuation_tv, Print=False)
+def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
+    ret = NAR.AddInput(inputforNAR, Print=False)
     for backup in backups:
         for derivation in ret[backup]:
             for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
                 if forbidden in derivation["term"]:
                     return
-            if derivation["punctuation"] == "." and derivation["occurrenceTime"] == "eternal" and derivation["term"] != "None":
+            if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
                 if term.startswith("dt="): #we don't need to store time deltas
                     term = " ".join(term.split(" ")[1:])
@@ -109,11 +112,11 @@ def ProcessInput(currentTime, memory, term, punctuation_tv, backups = ["input", 
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
                 if term in memory:
-                    (t, usefulness, (f, c)) = memory[term]
+                    (t, usefulness, (f, c), time) = memory[term]
                     if c2 >= c:
-                        memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2)) #, #(f2, c2, usefulness + usefulnessAddition)
+                        memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
-                    memory[term] = (currentTime, usefulnessAddition, (f2, c2))
+                    memory[term] = (currentTime, usefulnessAddition, (f2, c2), derivation["occurrenceTime"])
 
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
@@ -128,9 +131,9 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     if s == "" or v == "" or p == "":
         return False
     if v == "isa" or v == "are":
-        ProcessInput(currentTime, memory, f"<{s} --> {p}>", punctuation_tv)
+        ProcessInput(currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
     else:
-        ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>", punctuation_tv)
+        ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
     return True
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
@@ -141,7 +144,7 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv):
     p = Lemmatize(p, wordnet.ADJ)
     if s == "" or p == "":
         return False
-    ProcessInput(currentTime, memory, f"<{s} --> [{p}]>", punctuation_tv)
+    ProcessInput(currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
     return True
 
 lastTime = 0
