@@ -43,11 +43,11 @@ for x in sys.argv:
 memory = {} #the NARS-style long-term memory
 currentTime = 1
 
-def PromptProcess(send_prompt, isQuestion):
+def PromptProcess(inp, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    Control_cycle(currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues)
+    Control_cycle(inp, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues)
 
 while True:
     try:
@@ -72,10 +72,12 @@ while True:
     if inp.endswith("?"):
         send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
                                             (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
-        PromptProcess(send_prompt, True)
+        PromptProcess(inp, send_prompt, True)
     else:
         if len(inp) > 0 and inp != "1":
-            PromptProcess(Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
+            PromptProcess(inp, Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
+        else:
+            NAR.AddInput("1", Print=False)
         #PromptProcess(Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
         currentTime += 1
     #Memory_store(filename, memory, currentTime, evidentalBaseID)

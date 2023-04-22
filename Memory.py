@@ -26,9 +26,9 @@ from os.path import exists
 import json
 import sys
 import os
-sys.path.append("/home/tc/OpenNARS-for-Applications/misc/Python/")
 cwd = os.getcwd()
-os.chdir("/home/tc/OpenNARS-for-Applications/misc/Python/")
+sys.path.append(cwd + "/OpenNARS-for-Applications/misc/Python/")
+os.chdir(cwd + "/OpenNARS-for-Applications/misc/Python/")
 import NAR
 os.chdir(cwd)
 
@@ -72,7 +72,15 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
             flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
-        prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
+        term = x[0][1:-1]
+        if " * " in term:
+            arg1 = term.split("(")[1].split(" * ")[0].strip()
+            arg2 = term.split(")")[0].split(" * ")[1].strip()
+            relarg = term.split(" --> ")[1].strip()
+            term = arg1 + " " + relarg + " " + arg2
+        else:
+            term = term.replace(" --> ", " isa ")
+        prompt_memory += f"i={i}: {term}. truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
 from nltk import WordNetLemmatizer
@@ -83,23 +91,20 @@ def Lemmatize(word, tag):
     ret = lemma.lemmatize(word.lower(), pos = tag).strip().lower().replace(" ","_").replace("-","_")
     if tag == wordnet.VERB:
         if ret == "is" or ret == "isa" or ret == "is_a" or ret == "be" or ret == "are" or ret == "were":
-            return "IsA"
+            return "isa"
     return ret
 
 def ProcessInput(currentTime, memory, term, punctuation_tv, backups = ["input", "answers", "derivations"]):
     ret = NAR.AddInput(term + punctuation_tv, Print=False)
     for backup in backups:
         for derivation in ret[backup]:
-            #print(derivation["term"], " /1 " in derivation["term"])
             for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
                 if forbidden in derivation["term"]:
                     return
-            #print("GRANTED>", derivation["term"])
             if derivation["punctuation"] == "." and derivation["occurrenceTime"] == "eternal" and derivation["term"] != "None":
                 term = derivation["term"]
                 if term.startswith("dt="): #we don't need to store time deltas
                     term = " ".join(term.split(" ")[1:])
-                #query(term)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
@@ -109,32 +114,52 @@ def ProcessInput(currentTime, memory, term, punctuation_tv, backups = ["input", 
                         memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2)) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
                     memory[term] = (currentTime, usefulnessAddition, (f2, c2))
-    
-def Relation(currentTime, memory, s, v, p, punctuation_tv):
+
+relations = set(["isa", "are", "hasproperty"])
+def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
+    global relations
     s = Lemmatize(s, wordnet.NOUN)
     p = Lemmatize(p, wordnet.NOUN)
     v = Lemmatize(v, wordnet.VERB)
+    relations.add(v)
+    if s not in inp or p not in inp:
+        #print("//!!!! filtered out", s, v, p)
+        return False
     if s == "" or v == "" or p == "":
-        return
-    if v == "IsA" or v == "are":
+        return False
+    if v == "isa" or v == "are":
         ProcessInput(currentTime, memory, f"<{s} --> {p}>", punctuation_tv)
     else:
         ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>", punctuation_tv)
+    return True
 
-def Property(currentTime, memory, s, p, punctuation_tv):
+def Property(inp, currentTime, memory, s, p, punctuation_tv):
+    if s not in inp or p not in inp:
+        #print("//!!!! filtered out", s, "hasproperty", p)
+        return False
     s = Lemmatize(s, wordnet.NOUN)
     p = Lemmatize(p, wordnet.ADJ)
     if s == "" or p == "":
-        return
+        return False
     ProcessInput(currentTime, memory, f"<{s} --> [{p}]>", punctuation_tv)
+    return True
 
-def Memory_digest_sentence(currentTime, memory, sentence, truth, PrintMemoryUpdates):
+lastTime = 0
+hadRelation = set([])
+def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates):
+    global lastTime, hadRelation
+    if currentTime != lastTime:
+        hadRelation = set([])
+    if sentence in hadRelation:
+        return
+    lastTime = currentTime
     pieces = sentence.split(" ")
     punctuation_tv = f". {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
-            Property(currentTime, memory, pieces[0], pieces[2], punctuation_tv)
+            return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv)
         else:
-            Relation(currentTime, memory, *pieces, punctuation_tv)
-    #else:
-    #    print("!!!! omitted", pieces)
+            return Relation(inp, currentTime, memory, *pieces, punctuation_tv)
+    else:
+        #print("//!!!! Can't form relation:", pieces)
+        return False
