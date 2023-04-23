@@ -73,7 +73,7 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
         term = x[0][1:-1] if "<" in x[0] else x[0]
-        if " * " in term:
+        if " * " in term and "=/>" not in term:
             arg1 = term.split("(")[1].split(" * ")[0].strip()
             arg2 = term.split(")")[0].split(" * ")[1].strip()
             relarg = term.split(" --> ")[1].strip()

@@ -56,10 +56,15 @@ while True:
     except:
         exit(0)
     if PrintInputSentence: print("Input:", inp)
+    if inp.startswith("//"):
+        continue
     if inp.startswith("*volume="): #TODO
         continue
     if inp.startswith("*prompt"):
         print(Memory_generate_prompt(memory, "","", attention_buffer_size))
+        continue
+    if inp.startswith("*"):
+        NAR.AddInput(inp)
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         ProcessInput(currentTime, memory, inp)
