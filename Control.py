@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
+def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -55,6 +55,9 @@ def Control_cycle(memory, cmd, userQuestion, currentTime, evidentalBaseID, Print
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             if isInput:
+                if len(sentence.split(" ")) == 3:
+                    if sentence.split(" ")[0] not in inp or sentence.split(" ")[2] not in inp:
+                        continue
                 stamp = [evidentalBaseID]
                 evidentalBaseID += 1
             else:
