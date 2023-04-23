@@ -36,8 +36,6 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 **Already supported:**
 - NARS-like declarative inference and question answering with long-term memory storage
 
-**TODO for later:**
+**Additionally:**
 
-- Episodic memory view as part of the attention buffer, introducing innate time notions as described in NAL-7 (occurrenceTime, temporal relations, anticipation).
-- Goal and procedural memory view as part of the attention buffer and NARS-based decision making principles as described in NAL-8. This includes prompt encodings for executable operations, operation choice based on maximum truth expectation, etc.
-
+- There is also the option to use ONA for reliable reasoning (GPT models sometimes propose faulty inference steps). There is a branch https://github.com/patham9/NarsGPT/tree/ONAfication which will likely be moved to https://github.com/opennars/OpenNARS-for-Applications to become the primary natural language interface of ONA.
