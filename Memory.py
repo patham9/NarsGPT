@@ -99,15 +99,15 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
     ret = NAR.AddInput(inputforNAR, Print=False)
     for backup in backups:
         for derivation in ret[backup]:
-            for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
-                if forbidden in derivation["term"]:
-                    return ret
-                if derivation["term"].startswith("<["):
-                    return ret
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
+                for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
+                    if forbidden in term:
+                        return ret
                 if term.startswith("dt="): #we don't need to store time deltas
                     term = " ".join(term.split(" ")[1:])
+                if derivation["term"].startswith("<["):
+                    return ret
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
