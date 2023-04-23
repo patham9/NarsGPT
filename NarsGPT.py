@@ -58,6 +58,8 @@ while True:
     if PrintInputSentence: print("Input:", inp)
     if inp.startswith("*volume="): #TODO
         continue
+    if inp.startswith("//") or inp.startswith("*"):
+        continue
     if inp.startswith("*prompt"):
         print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
