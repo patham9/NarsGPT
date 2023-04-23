@@ -63,9 +63,6 @@ while True:
     if inp.startswith("*prompt"):
         print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
-    if inp.startswith("*"):
-        NAR.AddInput(inp)
-        continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         ProcessInput(currentTime, memory, inp)
         if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
@@ -79,6 +76,9 @@ while True:
         attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
         for x in attention_buf:
             print(x)
+        continue
+    if inp.startswith("*"):
+        NAR.AddInput(inp)
         continue
     if inp.endswith("?"):
         send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
