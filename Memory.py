@@ -31,6 +31,7 @@ sys.path.append(cwd + "/OpenNARS-for-Applications/misc/Python/")
 os.chdir(cwd + "/OpenNARS-for-Applications/misc/Python/")
 import NAR
 os.chdir(cwd)
+from Truth import *
 
 def Memory_attention_buffer(memory, attention_buffer_size):
     attention_buf=[]
@@ -48,9 +49,6 @@ def Memory_attention_buffer(memory, attention_buffer_size):
         attention_buf = [relevant_item_list[i]] + attention_buf
         i += 1
     return attention_buf
-
-def Truth_Expectation(v):
-    return (v[1] * (v[0] - 0.5) + 0.5)
 
 def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size):
     prompt_memory = ""
