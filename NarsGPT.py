@@ -64,9 +64,16 @@ while True:
         print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
-        ProcessInput(currentTime, memory, inp)
+        ret = ProcessInput(currentTime, memory, inp)
         if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
             currentTime += 1
+        if "answers" in ret and ret["answers"]:
+            answer = ret["answers"][0]
+            if "truth" not in answer:
+                print("Answer: None.")
+            else:
+                occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
+                print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
         continue
     if inp.startswith("*memory"):
         for x in memory.items():

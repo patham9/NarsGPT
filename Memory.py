@@ -101,7 +101,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
         for derivation in ret[backup]:
             for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
                 if forbidden in derivation["term"]:
-                    return
+                    return ret
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
                 if term.startswith("dt="): #we don't need to store time deltas
@@ -115,6 +115,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                         memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
                     memory[term] = (currentTime, usefulnessAddition, (f2, c2), derivation["occurrenceTime"])
+    return ret
 
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
