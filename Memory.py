@@ -77,7 +77,7 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
             relarg = term.split(" --> ")[1].strip()
             term = arg1 + " " + relarg + " " + arg2
         else:
-            term = term.replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
+            term = term.replace(" --> [", " hasproperty ").replace("]","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
         timeterm = ""
         if x[1][3] != "eternal":
             timeterm = "t=" + x[1][3] + " "
@@ -101,6 +101,8 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
         for derivation in ret[backup]:
             for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
                 if forbidden in derivation["term"]:
+                    return ret
+                if derivation["term"].startswith("<["):
                     return ret
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
