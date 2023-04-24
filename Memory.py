@@ -33,7 +33,6 @@ import NAR
 os.chdir(cwd)
 from Truth import *
 
-question_content = []
 def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
     primed = {}
     words = [x.strip().replace("?","") for x in inp.split(" ")]
