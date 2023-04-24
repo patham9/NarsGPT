@@ -109,7 +109,7 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
         if x[1][3] != "eternal":
             timeterm = "t=" + x[1][3] + " "
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
-    return prompt_start + prompt_memory + prompt_end
+    return buf, prompt_start + prompt_memory + prompt_end
 
 from nltk import WordNetLemmatizer
 from nltk.corpus import wordnet
@@ -230,3 +230,26 @@ def Memory_load(filename):
 def Memory_store(filename, memory, currentTime):
     with open(filename, 'w') as f:
         json.dump((memory, currentTime), f)
+
+def Memory_QuestionPriming(currentTime, cmd, memory, buf):
+    #1. get all memory index references
+    indexrefs = [x+" " for x in cmd.split("i=")]
+    indices=[]
+    for valstr in indexrefs:
+        curdigits = ""
+        i = 0
+        while i<len(valstr):
+            if valstr[i].isdigit():
+                curdigits += valstr[i]
+            else:
+                if curdigits.isdigit():
+                    indices.append(int(curdigits))
+                    curdigits = ""
+                if valstr[i] != ",":
+                    break
+            i += 1
+    #2. check if they are in buf and prime ONA's memory with the question which will activate the concepts:
+    for index in indices:
+        if index >= 0 and index < len(buf):
+            item = buf[index]
+            query(currentTime, memory, item[0])

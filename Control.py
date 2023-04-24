@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues):
+def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -58,3 +58,5 @@ def Control_cycle(inp, currentTime, memory, cmd, userQuestion, PrintMemoryUpdate
                     print(f"{printsentence}. truth={truth}")
                 else:
                     print(printsentence)
+    if userQuestion and QuestionPriming:
+        Memory_QuestionPriming(currentTime, "\n".join(cmd), memory, buf)
