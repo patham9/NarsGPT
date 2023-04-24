@@ -38,6 +38,7 @@ PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 NarseseByONA = True and "NarseseByGPT" not in sys.argv
 QuestionPriming = True and "NoQuestionPriming" not in sys.argv
+NegationProtection = True and "NoNegationProtection" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
@@ -48,7 +49,7 @@ def PromptProcess(inp, buf, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming)
+    Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, NegationProtection)
 
 while True:
     try:
@@ -62,9 +63,9 @@ while True:
         continue
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1]))
+            print(Memory_generate_prompt(memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1])[1])
         else:
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size))
+            print(Memory_generate_prompt(memory, "","", attention_buffer_size)[1])
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if inp.endswith("?"): #query first
