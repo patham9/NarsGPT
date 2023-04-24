@@ -33,7 +33,31 @@ import NAR
 os.chdir(cwd)
 from Truth import *
 
-def Memory_attention_buffer(memory, attention_buffer_size):
+question_content = []
+def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
+    primed = {}
+    words = [x.strip().replace("?","") for x in inp.split(" ")]
+    for x in words:
+        n = Lemmatize(x, wordnet.NOUN)
+        v = Lemmatize(x, wordnet.VERB)
+        for m in list(memory.items()):
+            padded = lambda w: " " + w.replace(">"," ").replace("<"," ").replace("("," ").replace(")"," ") + " "
+            if padded(n) in padded(m[0]) or padded(v) in padded(m[0]):
+                if m not in attention_buf:
+                    matchQuality = 2 if (padded(n) in padded(m[0]) and padded(v) in padded(m[0])) else 1
+                    if m[0] not in primed:
+                        primed[m[0]] = (matchQuality, m[1])
+                    else:
+                        primed[m[0]] = (primed[m[0]][0] + matchQuality, primed[m[0]][1])
+    primed = list(primed.items())
+    primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
+    primed = primed[:max_LTM_retrievals]
+    for m in primed:
+        print("//Retrieved from LTM:", m)
+    primed = [(x[0],x[1][1]) for x in primed]
+    return list(reversed(primed))
+
+def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
     attention_buf=[]
     relevant_item_list = list(memory.items())
     #find attention_buffer_size/2 newest items:
@@ -48,11 +72,14 @@ def Memory_attention_buffer(memory, attention_buffer_size):
     while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
         attention_buf = [relevant_item_list[i]] + attention_buf
         i += 1
+    #pull in question content that is not already included
+    if inpQuestion is not None:
+        attention_buf = attention_buf + RetrieveQuestionContent(memory, attention_buf, inpQuestion)
     return attention_buf
 
-def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size):
+def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
     prompt_memory = ""
-    buf = Memory_attention_buffer(memory, attention_buffer_size)
+    buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
@@ -100,8 +127,9 @@ def query(currentTime, memory, term):
     global retrieved
     if term not in retrieved and term in memory:
         retrieved.add(term)
-        (f, c, _) = memory[term]
-        ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}", Print=Print)
+        (t, usefulness, (f, c), time) = memory[term]
+        if time == "eternal":
+            ProcessInput(currentTime, memory, f"{t}. {{{f} {c}}}")
     retrieved.add(term)
 
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):

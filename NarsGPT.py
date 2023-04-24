@@ -60,7 +60,10 @@ while True:
     if inp.startswith("*volume="): #TODO
         continue
     if inp.startswith("*prompt"):
-        print(Memory_generate_prompt(memory, "","", attention_buffer_size))
+        if inp.endswith("?"):
+            print(Memory_generate_prompt(memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1]))
+        else:
+            print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         ret = ProcessInput(currentTime, memory, inp)
@@ -87,7 +90,7 @@ while True:
         NAR.AddInput(inp)
         continue
     if inp.endswith("?"):
-        send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size) + inp[:-1] + \
+        send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp) + inp[:-1] + \
                                             (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         PromptProcess(inp, send_prompt, True)
     else:
