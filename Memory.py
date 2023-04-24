@@ -26,7 +26,29 @@ from os.path import exists
 from NAL import *
 import json
 
-def Memory_attention_buffer(memory, attention_buffer_size):
+retrieved_content = []
+def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
+    global retrieved_content
+    primed = {}
+    words = [x.strip().replace("?","") for x in inp.split(" ")]
+    for x in words:
+        for m in list(memory.items()):
+            padded = lambda w: " " + w + " "
+            if padded(x) in padded(m[0]):
+                if m not in attention_buf:
+                    if m[0] not in primed:
+                        primed[m[0]] = (1, m[1])
+                    else:
+                        primed[m[0]] = (primed[m[0]][0] + 1, primed[m[0]][1])
+    primed = list(primed.items())
+    primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
+    primed = primed[:max_LTM_retrievals]
+    #for m in primed:
+    #    print("//Retrieved from LTM:", m)
+    primed = [(x[0],x[1][1]) for x in primed]
+    retrieved_content = list(reversed(primed))
+
+def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
     attention_buf=[]
     relevant_item_list = list(memory.items())
     #find attention_buffer_size/2 newest items:
@@ -41,11 +63,15 @@ def Memory_attention_buffer(memory, attention_buffer_size):
     while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
         attention_buf = [relevant_item_list[i]] + attention_buf
         i += 1
+    #pull in question content that is not already included
+    if inpQuestion is not None:
+        RetrieveQuestionContent(memory, attention_buf, inpQuestion)
+    attention_buf = attention_buf + retrieved_content
     return attention_buf
 
-def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size):
+def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
     prompt_memory = ""
-    buf = Memory_attention_buffer(memory, attention_buffer_size)
+    buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
