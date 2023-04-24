@@ -22,5 +22,14 @@
  * THE SOFTWARE.
  * """
 
+import math
+
 def Truth_Expectation(v):
     return (v[1] * (v[0] - 0.5) + 0.5)
+
+def Truth_Projection(v, originalTime, targetTime):
+    return (v[0], v[1] * (0.8**abs(targetTime - originalTime)))
+
+#language events from the channel decay slower
+def Truth_LanguageProjection(v, originalTime, targetTime):
+    return (v[0], v[1] * 1.0/math.sqrt(1+abs(originalTime-targetTime)))

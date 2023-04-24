@@ -38,6 +38,7 @@ PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 NarseseByONA = True and "NarseseByGPT" not in sys.argv
 QuestionPriming = True and "NoQuestionPriming" not in sys.argv
+TimeHandling = True and "NoTimeHandling" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
@@ -62,9 +63,9 @@ while True:
         continue
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1])[1])
+            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
         else:
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size)[1])
+            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, TimeHandling = TimeHandling)[1])
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if inp.endswith("?"): #query first
@@ -85,6 +86,9 @@ while True:
         for x in memory.items():
             print(x)
         continue
+    if inp.startswith("*time"):
+        print(currentTime)
+        continue
     if inp.startswith("*buffer"):
         attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
         for x in attention_buf:
@@ -94,12 +98,12 @@ while True:
         NAR.AddInput(inp)
         continue
     if inp.endswith("?"):
-        buf, text = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp)
+        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp, TimeHandling = TimeHandling)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
-            buf, text = Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size)
+            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size, TimeHandling = TimeHandling)
             PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
         else:
             ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)

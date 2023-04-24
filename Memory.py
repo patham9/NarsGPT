@@ -73,16 +73,22 @@ def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
         i += 1
     #pull in question content that is not already included
     if inpQuestion is not None:
-        attention_buf = attention_buf + RetrieveQuestionContent(memory, attention_buf, inpQuestion)
+        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) + attention_buf
     return attention_buf
 
-def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
+def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
     prompt_memory = ""
     buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
         (f,c) = x[1][2]
+        timeterm = ""
+        if x[1][3] != "eternal":
+            timeterm = "t=" + x[1][3] + " "
+            (f,c) = Truth_Projection((f,c), float(x[1][3]), float(currentTime))
+        elif TimeHandling:
+            (f,c) = Truth_LanguageProjection((f,c), float(x[1][0]), float(currentTime))
         flags = []
         if c < 0.5:
             flags.append("hypothetically")
@@ -104,9 +110,6 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
             term = arg1 + " " + relarg + " " + arg2
         else:
             term = term.replace(" --> [", " hasproperty ").replace("]","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
-        timeterm = ""
-        if x[1][3] != "eternal":
-            timeterm = "t=" + x[1][3] + " "
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
@@ -162,7 +165,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
                 if term in memory:
                     (t, usefulness, (f, c), time) = memory[term]
-                    if c2 >= c:
+                    if c2 > c:
                         memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
                     memory[term] = (currentTime, usefulnessAddition, (f2, c2), derivation["occurrenceTime"])
@@ -175,7 +178,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     p = Lemmatize(p, wordnet.NOUN)
     v = Lemmatize(v, wordnet.VERB)
     relations.add(v)
-    if s not in inp or p not in inp:
+    if s not in inp and p not in inp:
         #print("//!!!! filtered out", s, v, p)
         return False
     if s == "" or v == "" or p == "":
@@ -187,7 +190,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s not in inp or p not in inp:
+    if s not in inp and p not in inp:
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False
     s = Lemmatize(s, wordnet.NOUN)
