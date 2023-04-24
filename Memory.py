@@ -52,8 +52,8 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
     primed = list(primed.items())
     primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
     primed = primed[:max_LTM_retrievals]
-    for m in primed:
-        print("//Retrieved from LTM:", m)
+    #for m in primed:
+    #    print("//Retrieved from LTM:", m)
     primed = [(x[0],x[1][1]) for x in primed]
     return list(reversed(primed))
 
