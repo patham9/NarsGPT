@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, NegationProtection):
+def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -46,8 +46,6 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
             isNegated = True
             x = x[7:].replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
             truth = (0.0, 0.9)
-            if NegationProtection and "not" not in inp and "n't" not in inp and "except" not in inp and "dis" not in inp: #avoid RLHF bs bias
-                truth = (1.0, 0.9)
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
             x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
