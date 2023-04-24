@@ -41,8 +41,7 @@ NarseseByONA = True and "NarseseByGPT" not in sys.argv
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-memory = {} #the NARS-style long-term memory #TODO load memory
-currentTime = 1
+(memory, currentTime) = Memory_load(filename) #the ONA memory
 
 def PromptProcess(inp, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
@@ -97,4 +96,4 @@ while True:
         else:
             ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         currentTime += 1
-    #Memory_store(filename, memory, currentTime, evidentalBaseID) #TODO save memory
+    Memory_store(filename, memory, currentTime)

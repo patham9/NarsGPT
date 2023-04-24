@@ -95,6 +95,15 @@ def Lemmatize(word, tag):
             return "isa"
     return ret
 
+retrieved = set([])
+def query(currentTime, memory, term):
+    global retrieved
+    if term not in retrieved and term in memory:
+        retrieved.add(term)
+        (f, c, _) = memory[term]
+        ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}", Print=Print)
+    retrieved.add(term)
+
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
     ret = NAR.AddInput(inputforNAR, Print=False)
     for backup in backups:
@@ -108,6 +117,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     term = " ".join(term.split(" ")[1:])
                 if derivation["term"].startswith("<["):
                     return ret
+                query(currentTime, memory, term)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
@@ -167,3 +177,16 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
     else:
         #print("//!!!! Can't form relation:", pieces)
         return False
+
+def Memory_load(filename):
+    memory = {} #the NARS-style long-term memory
+    currentTime = 1
+    if exists(filename):
+        with open(filename) as json_file:
+            print("//Loaded memory content from", filename)
+            (memory, currentTime) = json.load(json_file)
+    return (memory, currentTime)
+
+def Memory_store(filename, memory, currentTime):
+    with open(filename, 'w') as f:
+        json.dump((memory, currentTime), f)
