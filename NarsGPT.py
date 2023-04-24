@@ -66,6 +66,8 @@ while True:
             print(Memory_generate_prompt(memory, "","", attention_buffer_size))
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
+        if inp.endswith("?"): #query first
+            query(currentTime, memory, inp[:-1].strip())
         ret = ProcessInput(currentTime, memory, inp)
         if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
             currentTime += 1

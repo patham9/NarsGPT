@@ -127,9 +127,21 @@ def query(currentTime, memory, term):
     global retrieved
     if term not in retrieved and term in memory:
         retrieved.add(term)
-        (t, usefulness, (f, c), time) = memory[term]
+        (_, _, (f, c), time) = memory[term]
         if time == "eternal":
-            ProcessInput(currentTime, memory, f"{t}. {{{f} {c}}}")
+            ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
+    if "?1" in term: #simple query matching
+        parts = term.split("?1")
+        bestTerm, bestTruth = (None, (0.0, 0.5))
+        for term2 in memory:
+            (_, _, (f2, c2), time2) = memory[term2]
+            if time2 == "eternal" and term2.startswith(parts[0]) and term2.endswith(parts[1]):
+                if Truth_Expectation((f2, c2)) > Truth_Expectation((bestTruth[0], bestTruth[1])):
+                    bestTerm = term2
+                    bestTruth = (f2, c2)
+        if bestTerm is not None:
+            retrieved.add(bestTerm)
+            ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
     retrieved.add(term)
 
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
