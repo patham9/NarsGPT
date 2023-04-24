@@ -178,7 +178,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     p = Lemmatize(p, wordnet.NOUN)
     v = Lemmatize(v, wordnet.VERB)
     relations.add(v)
-    if s not in inp and p not in inp:
+    if s not in inp or p not in inp:
         #print("//!!!! filtered out", s, v, p)
         return False
     if s == "" or v == "" or p == "":
@@ -190,7 +190,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s not in inp and p not in inp:
+    if s not in inp or p not in inp:
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False
     s = Lemmatize(s, wordnet.NOUN)
