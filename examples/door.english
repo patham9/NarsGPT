@@ -28,6 +28,5 @@ patrick has unlocked the door
 
 20
 
-*prompt
 what causes the door to open and when, express in a natural sentence in 20 words?
 //expected: Memory item 13: When Patrick unlocks the door and then the door has the property "front", picking the handle causes the door to open. (certainty=0.574)
