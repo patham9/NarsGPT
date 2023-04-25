@@ -1,3 +1,4 @@
+*motorbabbling=false
 <door --> [front]>. :|:
 <({SELF} * handle) --> ^pick>. :|:
 <door --> [open]>. :|: {0.0 0.99}
@@ -9,3 +10,11 @@ the door is open
 
 <(?1 &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>?
 //expected: Answer: <((<door --> [open]> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.200929}
+
+the door is open
+<door --> [front]>. :|:
+<door --> [open]>! :|:
+//expected: ^pick executed with arguments handle
+
+what causes the door to open and when, express in a full 30 word sentence?
+//expected: Memory item i=8 states that when the door is open and in front, picking the handle causes the door to open. This is hypothetically true with a certainty of 0.591.

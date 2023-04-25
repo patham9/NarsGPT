@@ -109,6 +109,15 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
             relarg = term.split(" --> ")[1].strip()
             term = arg1 + " " + relarg + " " + arg2
         else:
+            if " =/> " in term:
+                prec_op = term.split(" =/> ")[0].split(" &/ ")
+                removeParentheses = lambda u: u.replace(" --> ["," hasproperty ").replace(" --> "," isa ").replace("(",""). \
+                                                replace("<","").replace(")","").replace(">","").replace("[","").replace("]","").replace("  "," ").strip()
+                precs = removeParentheses(" and when then ".join(prec_op[:-1]))
+                narseseOp = prec_op[-1]
+                if " --> " in narseseOp:
+                    op = removeParentheses(prec_op[-1].split(" --> ")[1] + " " + prec_op[-1].split(" --> ")[0]).replace("{SELF} *", "")
+                term = "When '" + precs + "' then '" + removeParentheses(op) + "' causes '" + removeParentheses(term.split(" =/> ")[1]) + "'"
             term = term.replace(" --> [", " hasproperty ").replace("]","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return buf, prompt_start + prompt_memory + prompt_end
@@ -157,13 +166,18 @@ def query(currentTime, memory, term, time):
 
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
     ret = NAR.AddInput(inputforNAR, Print=False)
+    TestedCausalHypotheses = []
+    for execution in ret["executions"]:
+        print(execution, "expectation="+str(ret["reason"]["desire"]), ret["reason"]["hypothesis"])
+        TestedCausalHypotheses.append(ret["reason"]["hypothesis"])
     for backup in backups:
-        for derivation in ret[backup]:
+        it = ret[backup] + TestedCausalHypotheses if backup == "input" else ret[backup] #append causal hypotheses to be added to memory!
+        for derivation in it:
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
                 Continue = False
                 for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> ", " =/> "]:
-                    if forbidden in term:
+                    if forbidden in term and derivation not in TestedCausalHypotheses:
                         Continue = True
                 if Continue:
                     continue
