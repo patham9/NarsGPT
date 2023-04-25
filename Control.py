@@ -51,7 +51,7 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling)
+            digested, currentTime = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling) #currentTime updated
             if digested:
                 printsentence = sentence if isInput else x
                 if PrintTruthValues:
@@ -60,3 +60,4 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
                     print(printsentence)
     if userQuestion and QuestionPriming:
         Memory_QuestionPriming(currentTime, "\n".join(cmd), memory, buf)
+    return currentTime

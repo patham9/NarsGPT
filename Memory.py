@@ -141,8 +141,9 @@ def query(currentTime, memory, term):
                     bestTruth = (f2, c2)
         if bestTerm is not None:
             retrieved.add(bestTerm)
-            ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
+            _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
     retrieved.add(term)
+    return currentTime
 
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
     ret = NAR.AddInput(inputforNAR, Print=False)
@@ -150,14 +151,17 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
         for derivation in ret[backup]:
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
-                for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> "]:
+                Continue = False
+                for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> ", " =/> "]:
                     if forbidden in term:
-                        return ret
+                        Continue = True
+                if Continue:
+                    continue
                 if term.startswith("dt="): #we don't need to store time deltas
                     term = " ".join(term.split(" ")[1:])
                 if derivation["term"].startswith("<["):
-                    return ret
-                query(currentTime, memory, term)
+                    continue
+                currentTime = query(currentTime, memory, term)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
@@ -167,7 +171,11 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                         memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
                     memory[term] = (currentTime, usefulnessAddition, (f2, c2), currentTime)
-    return ret
+    if ">." in inputforNAR:
+        currentTime += 1
+    if inputforNAR.isdigit():
+        currentTime += int(inputforNAR)
+    return ret, currentTime
 
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
@@ -178,25 +186,25 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     relations.add(v)
     if s not in inp or p not in inp:
         #print("//!!!! filtered out", s, v, p)
-        return False
+        return False, currentTime
     if s == "" or v == "" or p == "":
-        return False
+        return False, currentTime
     if v == "isa" or v == "are":
-        ProcessInput(currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
+        _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
     else:
-        ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
-    return True
+        _, currentTime = ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
+    return True, currentTime
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
     if s not in inp or p not in inp:
         #print("//!!!! filtered out", s, "hasproperty", p)
-        return False
+        return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
     p = Lemmatize(p, wordnet.ADJ)
     if s == "" or p == "":
-        return False
-    ProcessInput(currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
-    return True
+        return False, currentTime
+    _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
+    return True, currentTime
 
 lastTime = 0
 hadRelation = set([])
@@ -205,7 +213,7 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
     if currentTime != lastTime:
         hadRelation = set([])
     if sentence in hadRelation:
-        return
+        return False, currentTime
     lastTime = currentTime
     pieces = sentence.split(" ")
     punctuation_tv = f". :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f". {{{truth[0]} {truth[1]}}}"
@@ -216,7 +224,7 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
             return Relation(inp, currentTime, memory, *pieces, punctuation_tv)
     else:
         #print("//!!!! Can't form relation:", pieces)
-        return False
+        return False, currentTime
 
 def Memory_load(filename):
     memory = {} #the NARS-style long-term memory
@@ -258,4 +266,4 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
     for m in memory:
         belief = memory[m]
         if belief[3] != "eternal" and currentTime - belief[3] > eternalizationDistance:
-            memory[m] = (belief[0], belief[1], Truth_Eternalize(belief[3]), "eternal")
+            memory[m] = (belief[0], belief[1], Truth_Eternalize(belief[2]), "eternal")

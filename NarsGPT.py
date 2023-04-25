@@ -38,18 +38,20 @@ PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 NarseseByONA = True and "NarseseByGPT" not in sys.argv
 QuestionPriming = True and "NoQuestionPriming" not in sys.argv
-TimeHandling = False and "NoTimeHandling" not in sys.argv
+TimeHandling = True and "NoTimeHandling" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
 (memory, currentTime) = Memory_load(filename) #the ONA memory
+if currentTime != 1:
+    NAR.AddInput(str(currentTime-1), Print=False)
 
 def PromptProcess(inp, buf, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling)
+    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling)
 
 while True:
     try:
@@ -71,7 +73,7 @@ while True:
         if inp.endswith("?"): #query first
             if QuestionPriming:
                 query(currentTime, memory, inp[:-1].strip())
-        ret = ProcessInput(currentTime, memory, inp)
+        ret, currentTime = ProcessInput(currentTime, memory, inp)
         if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
             currentTime += 1
         if "answers" in ret and ret["answers"]:
@@ -100,13 +102,12 @@ while True:
     if inp.endswith("?"):
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp, TimeHandling = TimeHandling)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
-        PromptProcess(inp, buf, send_prompt, True)
+        currentTime = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size, TimeHandling = TimeHandling)
-            PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
+            currentTime = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
         else:
-            ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
-        currentTime += 1
+            _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory)
     Memory_store(filename, memory, currentTime)
