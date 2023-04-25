@@ -52,7 +52,7 @@ def PromptProcess(inp, send_prompt, isQuestion):
 
 while True:
     try:
-        inp = input().rstrip("\n")
+        inp = input().rstrip("\n").strip().lower()
     except:
         exit(0)
     if PrintInputSentence: print("Input:", inp)
