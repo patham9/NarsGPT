@@ -77,6 +77,14 @@ def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
         attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) + attention_buf
     return attention_buf
 
+def ProductPrettify(term):
+    if " --> " in term and " * " in term.split(" --> ")[0]:
+        arg1 = term.split(" * ")[0].strip()
+        arg2 = term.split(" * ")[1].split(" --> ")[0].strip()
+        relarg = term.split(" --> ")[1].strip()
+        term = arg1 + " " + relarg + " " + arg2
+    return term.replace("(","").replace(")","")
+
 def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
     prompt_memory = ""
     buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
@@ -103,22 +111,19 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
         term = x[0][0][1:-1] if "<" in x[0][0] else x[0][0]
-        if " * " in term and "=/>" not in term:
-            arg1 = term.split("(")[1].split(" * ")[0].strip()
-            arg2 = term.split(")")[0].split(" * ")[1].strip()
-            relarg = term.split(" --> ")[1].strip()
-            term = arg1 + " " + relarg + " " + arg2
+        if "=/>" not in term:
+            term = ProductPrettify(term)
         else:
             if " =/> " in term:
-                prec_op = term.split(" =/> ")[0].split(" &/ ")
-                removeParentheses = lambda u: u.replace(" --> ["," hasproperty ").replace(" --> "," isa ").replace("(",""). \
-                                                replace("<","").replace(")","").replace(">","").replace("[","").replace("]","").replace("  "," ").strip()
+                prec_op = [ProductPrettify(p) for p in term.split(" =/> ")[0].split(" &/ ")]
+                removeParentheses = lambda u: u.replace(" --> ["," hasproperty ").replace(" --> "," isa ").replace(" - ", " and not ").replace("(",""). \
+                                                replace("<","").replace(")","").replace(">","").replace("  "," ").strip()
                 precs = removeParentheses(" and when then ".join(prec_op[:-1]))
-                narseseOp = prec_op[-1]
-                if " --> " in narseseOp:
+                op = prec_op[-1]
+                if " --> " in op:
                     op = removeParentheses(prec_op[-1].split(" --> ")[1] + " " + prec_op[-1].split(" --> ")[0]).replace("{SELF} *", "")
                 term = "When '" + precs + "' then '" + removeParentheses(op) + "' causes '" + removeParentheses(term.split(" =/> ")[1]) + "'"
-            term = term.replace(" --> [", " hasproperty ").replace("]","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
+        term = term.replace(" --> [", " hasproperty ").replace("]","").replace("[","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
@@ -176,7 +181,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
             if derivation["punctuation"] == "." and derivation["term"] != "None":
                 term = derivation["term"]
                 Continue = False
-                for forbidden in [" /1 ", " \1 ", " /2 ", " \2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> ", " =/> "]:
+                for forbidden in [" /1 ", " \\1 ", " /2 ", " \\2 ", " & ", " | ", " ~ ", " - ", " <=> ", " && ", " || ", " ==> ", " <-> ", " =/> ", " . "]:
                     if forbidden in term and derivation not in TestedCausalHypotheses:
                         Continue = True
                 if Continue:

@@ -1,20 +1,33 @@
 *motorbabbling=false
 <door --> [front]>. :|:
 <({SELF} * handle) --> ^pick>. :|:
-<door --> [open]>. :|: {0.0 0.99}
+<door --> [open]>. :|: {0.0 0.999}
 
-the door is open
+20
+
+patrick has unlocked the door
+<({SELF} * handle) --> ^pick>. :|:
+<door --> [open]>. :|: {0.0 0.999}
+
+20
+
+patrick has unlocked the door
 <door --> [front]>. :|:
 <({SELF} * handle) --> ^pick>. :|:
 <door --> [open]>. :|: {1.0 0.9}
 
-<(?1 &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>?
-//expected: Answer: <((<door --> [open]> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.200929}
+20
 
-the door is open
+<(?1 &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>?
+Answer: <((<(patrick * door) --> unlock> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.174792}
+
+patrick has unlocked the door
 <door --> [front]>. :|:
 <door --> [open]>! :|:
 //expected: ^pick executed with arguments handle
 
-what causes the door to open and when, express in a full 30 word sentence?
-//expected: Memory item i=8 states that when the door is open and in front, picking the handle causes the door to open. This is hypothetically true with a certainty of 0.591.
+20
+
+*prompt
+what causes the door to open and when, express in a natural sentence in 20 words?
+//expected: Memory item 13: When Patrick unlocks the door and then the door has the property "front", picking the handle causes the door to open. (certainty=0.574)
