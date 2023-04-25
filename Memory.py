@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  * """
 
+from ast import literal_eval
 from os.path import exists
 import json
 import sys
@@ -41,9 +42,9 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
         v = Lemmatize(x, wordnet.VERB)
         for m in list(memory.items()):
             padded = lambda w: " " + w.replace(">"," ").replace("<"," ").replace("("," ").replace(")"," ") + " "
-            if padded(n) in padded(m[0]) or padded(v) in padded(m[0]):
+            if padded(n) in padded(m[0][0]) or padded(v) in padded(m[0][0]):
                 if m not in attention_buf:
-                    matchQuality = 2 if (padded(n) in padded(m[0]) and padded(v) in padded(m[0])) else 1
+                    matchQuality = 2 if (padded(n) in padded(m[0][0]) and padded(v) in padded(m[0][0])) else 1
                     if m[0] not in primed:
                         primed[m[0]] = (matchQuality, m[1])
                     else:
@@ -82,11 +83,12 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
+        time = x[0][1]
         (f,c) = x[1][2]
         timeterm = ""
-        if x[1][3] != "eternal":
-            timeterm = "time=" + str(x[1][3]) + " "
-            (f,c) = Truth_Projection((f,c), float(x[1][3]), float(currentTime))
+        if time != "eternal":
+            timeterm = "time=" + str(time) + " "
+            (f,c) = Truth_Projection((f,c), float(time), float(currentTime))
         flags = []
         if c < 0.5:
             flags.append("hypothetically")
@@ -100,7 +102,7 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
             flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
-        term = x[0][1:-1] if "<" in x[0] else x[0]
+        term = x[0][0][1:-1] if "<" in x[0][0] else x[0][0]
         if " * " in term and "=/>" not in term:
             arg1 = term.split("(")[1].split(" * ")[0].strip()
             arg2 = term.split(")")[0].split(" * ")[1].strip()
@@ -123,26 +125,33 @@ def Lemmatize(word, tag):
     return ret
 
 retrieved = set([])
-def query(currentTime, memory, term):
+def query(currentTime, memory, term, time):
     global retrieved
-    if term not in retrieved and term in memory:
-        retrieved.add(term)
-        (_, _, (f, c), time) = memory[term]
+    if time != "eternal":
+        return currentTime
+    if (term, time) not in retrieved and (term, time) in memory:
+        (_, _, (f, c)) = memory[(term, time)]
         if time == "eternal":
             ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
+        if time == currentTime:
+            ProcessInput(currentTime, memory, f"{term}. :|: {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
-        bestTerm, bestTruth = (None, (0.0, 0.5))
-        for term2 in memory:
-            (_, _, (f2, c2), time2) = memory[term2]
-            if time2 == "eternal" and term2.startswith(parts[0]) and term2.endswith(parts[1]):
+        bestTerm, bestTruth, bestTime = (None, (0.0, 0.5), "eternal")
+        for (term2, time2) in memory:
+            (_, _, (f2, c2)) = memory[(term2, time2)]
+            if time2 == time and term2.startswith(parts[0]) and term2.endswith(parts[1]):
                 if Truth_Expectation((f2, c2)) > Truth_Expectation((bestTruth[0], bestTruth[1])):
                     bestTerm = term2
                     bestTruth = (f2, c2)
+                    bestTime = time2
         if bestTerm is not None:
-            retrieved.add(bestTerm)
-            _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
-    retrieved.add(term)
+            retrieved.add((bestTerm, bestTime))
+            if bestTime == "eternal":
+                _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
+            if bestTime == "currentTime":
+                _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. :|: {{{bestTruth[0]} {bestTruth[1]}}}")
+    retrieved.add((term, time))
     return currentTime
 
 def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
@@ -161,16 +170,17 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     term = " ".join(term.split(" ")[1:])
                 if derivation["term"].startswith("<["):
                     continue
-                currentTime = query(currentTime, memory, term)
+                time = int(derivation["occurrenceTime"])
+                currentTime = query(currentTime, memory, term, time)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
-                if term in memory:
-                    (t, usefulness, (f, c), time) = memory[term]
+                if (term, time) in memory:
+                    (t, usefulness, (f, c)) = memory[(term, time)]
                     if c2 > c:
-                        memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
+                        memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2))
                 else:
-                    memory[term] = (currentTime, usefulnessAddition, (f2, c2), currentTime)
+                    memory[(term, currentTime)] = (currentTime, usefulnessAddition, (f2, c2))
     if ">." in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():
@@ -232,12 +242,13 @@ def Memory_load(filename):
     if exists(filename):
         with open(filename) as json_file:
             print("//Loaded memory content from", filename)
-            (memory, currentTime) = json.load(json_file)
+            (mt, currentTime) = json.load(json_file)
+            memory = {literal_eval(k): v for k, v in mt.items()}
     return (memory, currentTime)
 
 def Memory_store(filename, memory, currentTime):
     with open(filename, 'w') as f:
-        json.dump((memory, currentTime), f)
+        json.dump(({str(k): v for k, v in memory.items()}, currentTime), f)
 
 def Memory_QuestionPriming(currentTime, cmd, memory, buf):
     #1. get all memory index references
@@ -260,10 +271,17 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
     for index in indices:
         if index >= 0 and index < len(buf):
             item = buf[index]
-            query(currentTime, memory, item[0])
+            query(currentTime, memory, item[0][0], item[0][1])
             
 def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
-    for m in memory:
-        belief = memory[m]
-        if belief[3] != "eternal" and currentTime - belief[3] > eternalizationDistance:
-            memory[m] = (belief[0], belief[1], Truth_Eternalize(belief[2]), "eternal")
+    deletes = []
+    additions = []
+    for (m, t) in memory:
+        belief = memory[(m, t)]
+        if t != "eternal" and currentTime - t > eternalizationDistance:
+            deletes.append((m, t))
+            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]))))
+    for k in deletes:
+        del memory[k]
+    for (k, v) in additions:
+        memory[k] = v

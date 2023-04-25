@@ -70,9 +70,9 @@ while True:
             print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, TimeHandling = TimeHandling)[1])
         continue
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
-        if inp.endswith("?"): #query first
-            if QuestionPriming:
-                query(currentTime, memory, inp[:-1].strip())
+        if QuestionPriming:
+            if inp.endswith("?"): #query first
+                query(currentTime, memory, inp[:-1].strip(), "eternal")
         ret, currentTime = ProcessInput(currentTime, memory, inp)
         if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
             currentTime += 1

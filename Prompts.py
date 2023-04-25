@@ -37,7 +37,7 @@ And use verbs for comparative relations!
 Memory:
 """
 
-Prompts_belief_end = "Encode all relations in the sentence!"
+Prompts_belief_end = "Encode all relations in the sentence, and the sentence has to be believed!"
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.
