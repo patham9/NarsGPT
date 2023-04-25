@@ -1,0 +1,11 @@
+<door --> [front]>. :|:
+<({SELF} * handle) --> ^pick>. :|:
+<door --> [open]>. :|: {0.0 0.99}
+
+the door is open
+<door --> [front]>. :|:
+<({SELF} * handle) --> ^pick>. :|:
+<door --> [open]>. :|: {1.0 0.9}
+
+<(?1 &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>?
+//expected: Answer: <((<door --> [open]> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.200929}

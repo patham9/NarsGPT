@@ -55,7 +55,7 @@ def PromptProcess(inp, buf, send_prompt, isQuestion):
 
 while True:
     try:
-        inp = input().rstrip("\n").strip().lower()
+        inp = input().rstrip("\n").strip()
     except:
         exit(0)
     if PrintInputSentence: print("Input:", inp)
@@ -74,8 +74,6 @@ while True:
             if inp.endswith("?"): #query first
                 query(currentTime, memory, inp[:-1].strip(), "eternal")
         ret, currentTime = ProcessInput(currentTime, memory, inp)
-        if inp.endswith(". :|:") or inp.endswith(".") or inp.endswith("! :|:"):
-            currentTime += 1
         if "answers" in ret and ret["answers"]:
             answer = ret["answers"][0]
             if "truth" not in answer:
@@ -99,6 +97,7 @@ while True:
     if inp.startswith("*"):
         NAR.AddInput(inp)
         continue
+    inp = inp.lower()
     if inp.endswith("?"):
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp, TimeHandling = TimeHandling)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)

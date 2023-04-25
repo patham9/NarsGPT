@@ -133,9 +133,9 @@ def query(currentTime, memory, term, time):
         retrieved.add((term, time))
         (_, _, (f, c)) = memory[(term, time)]
         if time == "eternal":
-            ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
+            _, currentTime = ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
         if time == currentTime:
-            ProcessInput(currentTime, memory, f"{term}. :|: {{{f} {c}}}")
+            _, currentTime = ProcessInput(currentTime, memory, f"{term}. :|: {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
         bestTerm, bestTruth, bestTime = (None, (0.0, 0.5), "eternal")
@@ -184,7 +184,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                         memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2))
                 else:
                     memory[(term, currentTime)] = (currentTime, usefulnessAddition, (f2, c2))
-    if ">." in inputforNAR:
+    if ">." in inputforNAR or "! :|:" in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():
         currentTime += int(inputforNAR)
