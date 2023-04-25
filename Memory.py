@@ -170,7 +170,9 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     term = " ".join(term.split(" ")[1:])
                 if derivation["term"].startswith("<["):
                     continue
-                time = int(derivation["occurrenceTime"])
+                time = derivation["occurrenceTime"]
+                if time.isdigit():
+                    time = int(time)
                 currentTime = query(currentTime, memory, term, time)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
