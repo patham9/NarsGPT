@@ -203,6 +203,8 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     if s == "" or v == "" or p == "":
         return False, currentTime
     if v == "isa" or v == "are":
+        if s == p:
+            return False, currentTime
         _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
     else:
         _, currentTime = ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
@@ -214,7 +216,7 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv):
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
     p = Lemmatize(p, wordnet.ADJ)
-    if s == "" or p == "":
+    if s == "" or p == "" or s == p:
         return False, currentTime
     _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
     return True, currentTime
