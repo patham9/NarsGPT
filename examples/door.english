@@ -19,7 +19,7 @@ patrick has unlocked the door
 20
 
 <(?1 &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>?
-Answer: <((<(patrick * door) --> unlock> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.174792}
+//Answer: <((<(patrick * door) --> unlock> &/ <door --> [front]>) &/ <({SELF} * handle) --> ^pick>) =/> <door --> [open]>>. {1.000000 0.174792}
 
 patrick has unlocked the door
 <door --> [front]>. :|:
