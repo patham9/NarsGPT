@@ -38,7 +38,7 @@ PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 NarseseByONA = True and "NarseseByGPT" not in sys.argv
 QuestionPriming = True and "NoQuestionPriming" not in sys.argv
-TimeHandling = True and "NoTimeHandling" not in sys.argv
+TimeHandling = False and "NoTimeHandling" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
@@ -49,11 +49,11 @@ def PromptProcess(inp, buf, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming)
+    Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling)
 
 while True:
     try:
-        inp = input().rstrip("\n")
+        inp = input().rstrip("\n").strip().lower()
     except:
         exit(0)
     if PrintInputSentence: print("Input:", inp)
@@ -108,4 +108,5 @@ while True:
         else:
             ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         currentTime += 1
+        Memory_Eternalize(currentTime, memory)
     Memory_store(filename, memory, currentTime)

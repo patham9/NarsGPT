@@ -29,7 +29,9 @@ def Truth_Expectation(v):
 
 def Truth_Projection(v, originalTime, targetTime):
     return (v[0], v[1] * (0.8**abs(targetTime - originalTime)))
+    
+def Truth_w2c(w):
+    return w / (w + 1)
 
-#language events from the channel decay slower
-def Truth_LanguageProjection(v, originalTime, targetTime):
-    return (v[0], v[1] * 1.0/math.sqrt(1+abs(originalTime-targetTime)))
+def Truth_Eternalize(v):
+    return (v[0], Truth_w2c(v[1]))

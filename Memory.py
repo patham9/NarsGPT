@@ -85,10 +85,8 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
         (f,c) = x[1][2]
         timeterm = ""
         if x[1][3] != "eternal":
-            timeterm = "t=" + x[1][3] + " "
+            timeterm = "time=" + str(x[1][3]) + " "
             (f,c) = Truth_Projection((f,c), float(x[1][3]), float(currentTime))
-        elif TimeHandling:
-            (f,c) = Truth_LanguageProjection((f,c), float(x[1][0]), float(currentTime))
         flags = []
         if c < 0.5:
             flags.append("hypothetically")
@@ -168,7 +166,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     if c2 > c:
                         memory[term] = (currentTime, usefulness + usefulnessAddition, (f2, c2), time) #, #(f2, c2, usefulness + usefulnessAddition)
                 else:
-                    memory[term] = (currentTime, usefulnessAddition, (f2, c2), derivation["occurrenceTime"])
+                    memory[term] = (currentTime, usefulnessAddition, (f2, c2), currentTime)
     return ret
 
 relations = set(["isa", "are", "hasproperty"])
@@ -202,7 +200,7 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv):
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates):
+def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling):
     global lastTime, hadRelation
     if currentTime != lastTime:
         hadRelation = set([])
@@ -210,7 +208,7 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
         return
     lastTime = currentTime
     pieces = sentence.split(" ")
-    punctuation_tv = f". {{{truth[0]} {truth[1]}}}"
+    punctuation_tv = f". :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f". {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
             return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv)
@@ -255,3 +253,9 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
         if index >= 0 and index < len(buf):
             item = buf[index]
             query(currentTime, memory, item[0])
+            
+def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
+    for m in memory:
+        belief = memory[m]
+        if belief[3] != "eternal" and currentTime - belief[3] > eternalizationDistance:
+            memory[m] = (belief[0], belief[1], Truth_Eternalize(belief[3]), "eternal")

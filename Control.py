@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming):
+def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -51,7 +51,7 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates)
+            digested = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling)
             if digested:
                 printsentence = sentence if isInput else x
                 if PrintTruthValues:
