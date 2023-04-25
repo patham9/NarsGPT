@@ -130,6 +130,7 @@ def query(currentTime, memory, term, time):
     if time != "eternal":
         return currentTime
     if (term, time) not in retrieved and (term, time) in memory:
+        retrieved.add((term, time))
         (_, _, (f, c)) = memory[(term, time)]
         if time == "eternal":
             ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
