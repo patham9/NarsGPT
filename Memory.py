@@ -188,7 +188,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     continue
                 if term.startswith("dt="): #we don't need to store time deltas
                     term = " ".join(term.split(" ")[1:])
-                if derivation["term"].startswith("<["):
+                if term.startswith("<[") or (" --> " in term and " * " in term.split(" --> ")[1]):
                     continue
                 time = derivation["occurrenceTime"]
                 if time.isdigit():
