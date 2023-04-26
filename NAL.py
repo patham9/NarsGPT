@@ -25,39 +25,34 @@
 from Truth import *
 from Stamp import *
 
-def NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction):
-    if statements[0] not in memory or statements[1] not in memory:
+def NAL_Syllogisms(memory, premises, conclusion, isDeduction, isInduction, isAbduction):
+    if premises is None:
         return None
-    premise1, premise2 = memory[statements[0]], memory[statements[1]]
+    premise1, premise2, conclusionTime = premises
     if isDeduction or isInduction or isAbduction:
-        if len(statements) != 3:
-            return None
-        if statements[0] not in memory or statements[1] not in memory:
-            return None
         if isDeduction:
             #start additional guards for deductions:
-            if isDeduction and " isa " not in statements[0] + " " + statements[1] and \
-                               " are " not in statements[0] + " " + statements[1]:
+            if " isa " not in premise1[0][0] + " " + premise2[0][0] and \
+               " are " not in premise1[0][0] + " " + premise2[0][0]:
                 return None
-            if len(statements[0].split(" ")) != 3 and len(statements[1].split(" ")) != 3:
+            if len(premise1[0][0].split(" ")) != 3 and len(premise2[0][0].split(" ")) != 3:
                 return None
-            lastword_st0 = statements[0].split(" ")[-1]
-            firstword_st0 = statements[0].split(" ")[0]
-            lastword_st1 = statements[1].split(" ")[-1]
-            firstword_st1 = statements[1].split(" ")[0]
+            lastword_st0 = premise1[0][0].split(" ")[-1]
+            firstword_st0 = premise1[0][0].split(" ")[0]
+            lastword_st1 = premise2[0][0].split(" ")[-1]
+            firstword_st1 = premise2[0][0].split(" ")[0]
             if lastword_st0 not in firstword_st1 and firstword_st1 not in lastword_st0 and \
                lastword_st1 not in firstword_st0 and firstword_st0 not in lastword_st1:
                    return None
             #end deduction guards
-            truth = Truth_Deduction(premise1[2], premise2[2])
+            truth = Truth_Deduction(premise1[1][2], premise2[1][2])
         elif isInduction:
-            truth = Truth_Induction(premise1[2], premise2[2])
+            truth = Truth_Induction(premise1[1][2], premise2[1][2])
         elif isAbduction:
-            truth = Truth_Abduction(premise1[2], premise2[2])
-        stamp = Stamp_make(premise1[3], premise2[3])
-        Stamp_IsOverlapping = Stamp_hasOverlap(premise1[3], premise2[3])
-        conclusion = statements[2]
-        return conclusion, truth, stamp, Stamp_IsOverlapping
+            truth = Truth_Abduction(premise1[1][2], premise2[1][2])
+        stamp = Stamp_make(premise1[1][3], premise2[1][3])
+        Stamp_IsOverlapping = Stamp_hasOverlap(premise1[1][3], premise2[1][3])
+        return conclusion, conclusionTime, truth, stamp, Stamp_IsOverlapping
     return None
 
 def NAL_Revision_And_Choice(truth1, stamp1, truth2, stamp2):
@@ -68,3 +63,7 @@ def NAL_Revision_And_Choice(truth1, stamp1, truth2, stamp2):
             return truth1, stamp1
         else:
             return truth2, stamp2
+
+def NAL_Projection(premise, conclusionTime):
+    ((term, time), (lastUsed, useCount, TV, stamp)) = premise
+    return ((term, conclusionTime), (lastUsed, useCount, Truth_Projection(TV, time, conclusionTime), stamp))

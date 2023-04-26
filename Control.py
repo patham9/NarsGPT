@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues):
+def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues, TimeHandling):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -55,23 +55,27 @@ def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, 
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             if isInput:
-                sentence = " ".join([x.strip().replace(" ", "_") for x in sentence.split(",")])
-                if len(sentence.split(",")) == 3:
-                    if sentence.split(",")[0].strip() not in inp or sentence.split(",")[2].strip() not in inp:
+                taskTime = currentTime
+                pieces = [x.strip().replace(" ", "_") for x in sentence.split(",")]
+                sentence = " ".join(pieces)
+                if len(pieces) == 3:
+                    if pieces[0].replace("_", " ") not in inp or pieces[2].replace("_", " ") not in inp:
                         continue
                 stamp = [evidentalBaseID]
                 evidentalBaseID += 1
             else:
                 statements = [x.strip() for x in sentence.split(",")]
-                InferenceResult = NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction)
+                if len(statements) != 3:
+                    continue
+                InferenceResult = NAL_Syllogisms(memory, Memory_retrievePremises(memory, [statements[0], statements[1]]), statements[2], isDeduction, isInduction, isAbduction)
                 if InferenceResult is not None:
-                    sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
+                    sentence, taskTime, truth, stamp, Stamp_IsOverlapping = InferenceResult
                     if Stamp_IsOverlapping: #not valid to infer due to stamp overlap
                         continue
                 else:
                     continue
             sentence = " ".join([x.strip() for x in sentence.split(",")])
-            Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates)
+            Memory_digest_sentence(currentTime, memory, sentence, truth, stamp, taskTime, PrintMemoryUpdates, TimeHandling)
             printsentence = sentence if isInput else x
             printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
             if PrintTruthValues:

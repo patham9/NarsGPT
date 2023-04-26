@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  * """
 
+from ast import literal_eval
 from os.path import exists
 from NAL import *
 import json
@@ -34,7 +35,7 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
     for x in words:
         for m in list(memory.items()):
             padded = lambda w: " " + w + " "
-            if padded(x) in padded(m[0]):
+            if padded(x) in padded(m[0][0]):
                 if m not in attention_buf:
                     if m[0] not in primed:
                         primed[m[0]] = (1, m[1])
@@ -69,13 +70,18 @@ def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
     attention_buf = attention_buf + retrieved_content
     return attention_buf
 
-def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
+def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
     prompt_memory = ""
     buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
+        time = x[0][1]
         (f,c) = x[1][2]
+        timeterm = ""
+        if time != "eternal":
+            timeterm = "time=" + str(time) + " "
+            (f,c) = Truth_Projection((f,c), float(time), float(currentTime))
         flags = []
         if c < 0.5:
             flags.append("hypothetically")
@@ -89,28 +95,75 @@ def Memory_generate_prompt(memory, prompt_start, prompt_end, attention_buffer_si
             flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
-        prompt_memory += f"i={i}: {x[0]}. truthtype={truthtype} certainty={certainty}\n"
+        prompt_memory += f"i={i}: {x[0][0]}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return prompt_start + prompt_memory + prompt_end
 
-def Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates):
-    if sentence not in memory:
-        memory[sentence] = (0, 0, (0.5, 0.0), [])
-    if sentence in memory:
-        lastUsed, useCount, truth_existing, stamp_existing = memory[sentence]
+def Memory_digest_sentence(usedTime, memory, sentence, truth, stamp, taskTime, PrintMemoryUpdates, TimeHandling):
+    occurrenceTime = taskTime if TimeHandling else "eternal"
+    if (sentence, occurrenceTime) not in memory:
+        memory[(sentence, occurrenceTime)] = (0, 0, (0.5, 0.0), [])
+    if (sentence, occurrenceTime) in memory:
+        lastUsed, useCount, truth_existing, stamp_existing = memory[(sentence, occurrenceTime)]
         truth_updated, stamp_updated = NAL_Revision_And_Choice(truth, stamp, truth_existing, stamp_existing)
-        memory[sentence] = (currentTime, useCount+1, truth_updated, stamp_updated)
-        if PrintMemoryUpdates: print("//UPDATED", sentence, memory[sentence])
+        memory[(sentence, occurrenceTime)] = (usedTime if taskTime == "eternal" else taskTime, useCount+1, truth_updated, stamp_updated)
+        if PrintMemoryUpdates: print("//UPDATED", sentence, memory[(sentence, occurrenceTime)])
 
 def Memory_load(filename):
     memory = {} #the NARS-style long-term memory
-    currentTime = 0
+    currentTime = 1
     evidentalBaseID = 1
     if exists(filename):
         with open(filename) as json_file:
             print("//Loaded memory content from", filename)
-            (memory, currentTime, evidentalBaseID) = json.load(json_file)
+            (mt, currentTime, evidentalBaseID) = json.load(json_file)
+            memory = {literal_eval(k): v for k, v in mt.items()}
     return (memory, currentTime, evidentalBaseID)
 
 def Memory_store(filename, memory, currentTime, evidentalBaseID):
     with open(filename, 'w') as f:
-        json.dump((memory, currentTime, evidentalBaseID), f)
+        json.dump(({str(k): v for k, v in memory.items()}, currentTime, evidentalBaseID), f)
+
+def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
+    deletes = []
+    additions = []
+    for (m, t) in memory:
+        belief = memory[(m, t)]
+        if t != "eternal" and currentTime - t > eternalizationDistance:
+            deletes.append((m, t))
+            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]), belief[3])))
+    for k in deletes:
+        del memory[k]
+    for (k, v) in additions:
+        memory[k] = v
+
+def Memory_retrieveNewestPremise(memory, statement):
+    ret = None if (statement, "eternal") not in memory else (statement, "eternal")
+    for (term, t) in memory:
+        if term == statement:
+            if ret is None or (t != "eternal" and ret[1] != "eternal" and t > ret[1]) or \
+                              (t != "eternal" and ret[1] == "eternal" and t != "eternal"):
+                ret = (term, t)
+    return ret
+
+def Memory_retrievePremises(memory, statements):
+    rets = []
+    for x in statements:
+        ret = Memory_retrieveNewestPremise(memory, x)
+        if ret is None:
+            return None
+        rets.append(ret)
+    largertime = 0
+    premise1 = (rets[0], memory[rets[0]])
+    premise2 = (rets[1], memory[rets[1]])
+    conclusionTime = "eternal"
+    if premise1[0][1] != "eternal" and premise2[0][1] != "eternal": #project them if both events
+        conclusionTime = max(premise1[0][1], premise2[0][1])
+        if premise1[0][1] != conclusionTime:
+            premise1 = NAL_Projection(premise1, conclusionTime)
+        if premise2[0][1] != conclusionTime:
+            premise2 = NAL_Projection(premise2, conclusionTime)
+    elif premise1[0][1] != "eternal": #if one is eternal we can use it
+        conclusionTime = premise1[0][1]
+    elif premise2[0][1] != "eternal": #and can use the time of the event for the conclusion
+        conclusionTime = premise2[0][1]
+    return (premise1, premise2, conclusionTime)

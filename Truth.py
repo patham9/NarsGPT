@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  * """
 
+import math
+
 def Truth_w2c(w):
     return w / (w + 1.0)
 
@@ -57,3 +59,12 @@ def Truth_Abduction(v1, v2):
 
 def Truth_Induction(v1, v2):
     return Truth_Abduction(v2, v1)
+
+def Truth_Projection(v, originalTime, targetTime):
+    return (v[0], v[1] * (0.8**abs(targetTime - originalTime)))
+
+def Truth_w2c(w):
+    return w / (w + 1)
+
+def Truth_Eternalize(v):
+    return (v[0], Truth_w2c(v[1]))

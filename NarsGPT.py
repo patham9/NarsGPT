@@ -36,6 +36,7 @@ PrintInputSentence = False or "PrintInputSentence" in sys.argv
 PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
+TimeHandling = True and "NoTimeHandling" not in sys.argv
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
@@ -48,7 +49,7 @@ def PromptProcess(inp, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
     commands = response['choices'][0]['message']['content'].split("\n")
-    evidentalBaseID = Control_cycle(inp, memory, commands, isQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues)
+    evidentalBaseID = Control_cycle(inp, memory, commands, isQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues, TimeHandling)
 
 while True:
     try:
@@ -60,9 +61,9 @@ while True:
         continue
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1]))
+            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1]))
         else:
-            print(Memory_generate_prompt(memory, "","", attention_buffer_size))
+            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size))
         continue
     if inp.startswith("*memory"):
         for x in memory.items():
@@ -76,12 +77,13 @@ while True:
     if inp.startswith("//") or inp.startswith("*"):
         continue
     if inp.endswith("?"):
-        send_prompt = Memory_generate_prompt(memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp) + inp[:-1] + \
+        send_prompt = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp) + inp[:-1] + \
                                             (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         PromptProcess(inp, send_prompt, True)
     else:
         if len(inp) > 0 and inp != "1":
-            PromptProcess(inp, Memory_generate_prompt(memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
-        PromptProcess(inp, Memory_generate_prompt(memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
+            PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
+        PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
         currentTime += 1
+        Memory_Eternalize(currentTime, memory)
     Memory_store(filename, memory, currentTime, evidentalBaseID)
