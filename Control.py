@@ -44,16 +44,17 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
         isNegated = False
         if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
             isNegated = True
-            x = x[7:].replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
+            x = x[7:].replace("  ", " ") #.replace('"', "").replace("'", "")
             truth = (0.0, 0.9)
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
-            x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
+            x = x.replace("  ", " ") #.replace('"', "").replace("'", "")
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             digested, currentTime = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling) #currentTime updated
             if digested:
                 printsentence = sentence if isInput else x
+                printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
                 if PrintTruthValues:
                     print(f"{printsentence}. truth={truth}")
                 else:

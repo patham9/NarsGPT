@@ -216,7 +216,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     p = Lemmatize(p, wordnet.NOUN)
     v = Lemmatize(v, wordnet.VERB)
     relations.add(v)
-    if s not in inp or p not in inp:
+    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
     if s == "" or v == "" or p == "":
@@ -230,7 +230,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True, currentTime
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s not in inp or p not in inp:
+    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -249,7 +249,7 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
     if sentence in hadRelation:
         return False, currentTime
     lastTime = currentTime
-    pieces = sentence.split(" ")
+    pieces = [x.strip().replace(" ","_") for x in sentence.split(",")]
     punctuation_tv = f". :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f". {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
