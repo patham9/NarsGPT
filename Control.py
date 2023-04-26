@@ -44,10 +44,10 @@ def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, 
         isNegated = False
         if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
             isNegated = True
-            x = x[7:].replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
+            x = x[7:].replace("  ", " ") #.replace('"', "").replace("'", "")
             truth = (0.0, 0.9)
         if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
-            x = x.replace(",", " ").replace("  ", " ") #.replace('"', "").replace("'", "")
+            x = x.replace("  ", " ") #.replace('"', "").replace("'", "")
         isDeduction = x.startswith("Deduce(")
         isInduction = x.startswith("Induce(")
         isAbduction = x.startswith("Abduce(")
@@ -55,13 +55,14 @@ def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, 
         if (isDeduction or isInduction or isAbduction or isInput) and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             if isInput:
-                if len(sentence.split(" ")) == 3:
-                    if sentence.split(" ")[0] not in inp or sentence.split(" ")[2] not in inp:
+                sentence = " ".join([x.strip().replace(" ", "_") for x in sentence.split(",")])
+                if len(sentence.split(",")) == 3:
+                    if sentence.split(",")[0].strip() not in inp or sentence.split(",")[2].strip() not in inp:
                         continue
                 stamp = [evidentalBaseID]
                 evidentalBaseID += 1
             else:
-                statements = [x.strip().replace(".", "") for x in sentence.split(", ")]
+                statements = [x.strip() for x in sentence.split(",")]
                 InferenceResult = NAL_Syllogisms(memory, statements, isDeduction, isInduction, isAbduction)
                 if InferenceResult is not None:
                     sentence, truth, stamp, Stamp_IsOverlapping = InferenceResult
@@ -69,8 +70,10 @@ def Control_cycle(inp, memory, cmd, userQuestion, currentTime, evidentalBaseID, 
                         continue
                 else:
                     continue
+            sentence = " ".join([x.strip() for x in sentence.split(",")])
             Memory_digest_sentence(memory, sentence, truth, stamp, currentTime, PrintMemoryUpdates)
             printsentence = sentence if isInput else x
+            printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
             if PrintTruthValues:
                 print(f"{printsentence}. truth={truth}")
             else:
