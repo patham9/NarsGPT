@@ -132,10 +132,16 @@ from nltk.corpus import wordnet
 lemma = WordNetLemmatizer()
 def Lemmatize(word, tag):
     global used_verbs
-    ret = lemma.lemmatize(word.lower(), pos = tag).strip().lower().replace(" ","_").replace("-","_")
-    if tag == wordnet.VERB:
-        if ret == "is" or ret == "isa" or ret == "is_a" or ret == "be" or ret == "are" or ret == "were":
-            return "isa"
+    word = word.lower().replace(" ", "_").replace("-","_")
+    if "_" in word and tag == wordnet.NOUN:
+        parts = word.split("_")
+        lastpart = lemma.lemmatize(parts[-1], pos = tag).strip().lower().replace(" ","_").replace("-","_")
+        ret = "_".join(parts[:-1]) + "_" + lastpart
+    else:
+        ret = lemma.lemmatize(word.lower(), pos = tag).strip().lower().replace(" ","_").replace("-","_")
+        if tag == wordnet.VERB:
+            if ret == "is" or ret == "isa" or ret == "is_a" or ret == "be" or ret == "are" or ret == "were":
+                return "isa"
     return ret
 
 retrieved = set([])
