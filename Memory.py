@@ -133,6 +133,8 @@ lemma = WordNetLemmatizer()
 def Lemmatize(word, tag):
     global used_verbs
     word = word.lower().replace(" ", "_").replace("-","_")
+    if word.endswith("encode") and len(word) > 6: #no idea why GPT adds Encode at the end for new words
+        word = word[:-6]
     if "_" in word and tag == wordnet.NOUN:
         parts = word.split("_")
         lastpart = lemma.lemmatize(parts[-1], pos = tag).strip().lower().replace(" ","_").replace("-","_")
