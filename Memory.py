@@ -140,7 +140,7 @@ def Lemmatize(word, tag):
     else:
         ret = lemma.lemmatize(word.lower(), pos = tag).strip().lower().replace(" ","_").replace("-","_")
         if tag == wordnet.VERB:
-            if ret == "is" or ret == "isa" or ret == "is_a" or ret == "be" or ret == "are" or ret == "were":
+            if ret == "is" or ret == "isa" or ret == "is_a" or ret == "be" or ret == "are" or ret == "were" or ret == "arelike" or ret == "islike":
                 return "isa"
     return ret
 
