@@ -220,13 +220,13 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     global relations
+    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
+        #print("//!!!! filtered out", s, v, p)
+        return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
     p = Lemmatize(p, wordnet.NOUN)
     v = Lemmatize(v, wordnet.VERB)
     relations.add(v)
-    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
-        #print("//!!!! filtered out", s, v, p)
-        return False, currentTime
     if s == "" or v == "" or p == "":
         return False, currentTime
     if v == "isa" or v == "are":
