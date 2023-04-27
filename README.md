@@ -35,6 +35,8 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 - Compared to gptONA (which is roughly equally capable in terms of incremental Q&A) this project makes no attempt to translate language into the Narsese formal language. No formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied. The benefit is that the overall system is simpler, and that the representations can be more flexible. But they also tend to be more ambiguous and redundant, and both can cause issues in belief revision. Additionally not all inferences GPT suggests are valid, which can cause problems in incremental learning settings as more faulty conclusions can be drawn from unsupported conclusions.
 However we believe both projects represent two key alternative directions on the crosscroads to AGI and are hence explored in parallel in this 2-branched repository.
 
+![Project Venn Diagram](https://user-images.githubusercontent.com/8284677/234832807-f26aaa18-afb9-4f6e-91ea-c667b74f1a5d.png)
+
 **Already supported:**
 - NARS-like declarative inference and question answering with long-term memory storage
 
