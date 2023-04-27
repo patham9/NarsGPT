@@ -11,7 +11,7 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 
 **Architecture**
 
-![NarsGPT Architecture](https://user-images.githubusercontent.com/8284677/232365471-faa3ccaf-5078-4830-905f-e8d7d520dde6.png)
+![gptONA Architecture](https://user-images.githubusercontent.com/8284677/234757615-16817c83-58a6-4d63-8c7c-2ac82fb66926.png)
 
 **Technical aspects:**
 - Sentences are stored in logical/structural form as in other NARS implementations.
