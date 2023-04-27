@@ -31,7 +31,7 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 **Compared to NARS with GPT as natural language channel:**
 
-- Compared to the quite successful https://github.com/opennars/OpenNARS-for-Applications/blob/master/misc/Python/english_to_narsese_gpt3.py approach ( which is shown in https://www.youtube.com/watch?v=cpu6TooJ0Dk ) this project makes no attempt to translate language into the Narsese formal language, no formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied.
+- Compared to gptONA (which is roughly equally capable) this project makes no attempt to translate language into the Narsese formal language. No formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied.
 
 **Already supported:**
 - NARS-like declarative inference and question answering with long-term memory storage
