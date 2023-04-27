@@ -210,7 +210,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     if c2 > c:
                         memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2))
                 else:
-                    memory[(term, currentTime)] = (currentTime, usefulnessAddition, (f2, c2))
+                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2))
     if ">." in inputforNAR or "! :|:" in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():

@@ -81,6 +81,7 @@ while True:
             else:
                 occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
                 print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
+        Memory_store(filename, memory, currentTime)
         continue
     if inp.startswith("*memory"):
         for x in memory.items():
