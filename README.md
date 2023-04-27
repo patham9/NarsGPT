@@ -30,7 +30,7 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 
 **Compared to implementing a NARS via GPT:**
 
-- Compared to NarsGPT (which is roughly equally capable in terms of incremental Q&A) this project translates language into the Narsese formal language via GPT and uses ONA for reasoning. This guarantees that conclusions are supported by the evidence and never faulty, and that representations are not ambiguous or redundant which makes belief revision easier when new evidence about a specific relation is presented to the system. Also this system can process Narsese events (dozens of events per second) in addition to the slow English input, so is more suitable for sensorimotor purposes than NarsGPT.
+- Compared to NarsGPT (which is roughly equally capable in terms of incremental Q&A) this project translates language into the Narsese formal language via GPT and uses ONA for reasoning. This guarantees that conclusions are supported by the evidence and never faulty, and that representations are not ambiguous or redundant which makes belief revision easier when new evidence about a specific relation is presented to the system. Also this system can process Narsese events (dozens of events per second) in addition to the slow English input, so is more suitable for sensorimotor purposes than NarsGPT. However we believe both projects represent two key alternative directions on the crosscroads to AGI and are hence explored in parallel in this 2-branched repository.
 
 **Already supported:**
 - NARS-style declarative inference and question answering with long-term memory storage
