@@ -38,4 +38,4 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 
 **Additionally:**
 
-- There is also the option to use ONA for reliable reasoning (GPT models sometimes propose faulty inference steps) and for a tighter connection to sensorimotor with grounded representations. There is a branch https://github.com/patham9/NarsGPT/tree/ONAfication which will likely be moved to https://github.com/opennars/OpenNARS-for-Applications to become the primary natural language interface of ONA.
+- There is also the option to use ONA for reliable reasoning (GPT models sometimes propose faulty inference steps) and for a tighter connection to sensorimotor with grounded representations. There is a branch https://github.com/patham9/NarsGPT/tree/gptONA for this purpose, check it out in case you need greater reliability and combination with efficienty event processing for sensorimotor and control purposes.
