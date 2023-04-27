@@ -5,7 +5,7 @@
 A GPT model prompted to build representations for a Non-Axiomatic Reasoning System ([OpenNARS for Applications](https://github.com/opennars/OpenNARS-for-Applications)). This is the first system implementation which uses GPT together with NARS for reasoning on natural language input. This system can learn in a long-term manner while being able to learn and apply new knowledge effectively.
 
 **Features:**
-- Natural Q&A interaction with the user
+- Natural open-ended Q&A interaction with the user
 - System has no initial knowledge (unless IncludeGPTKnowledge flag is set) but you can simply teach it
 - System will make inferences through ONA and will raise questions
 
@@ -26,6 +26,10 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 - Having the AI maintain a useful and evidentally supported set of beliefs through reasoning is the goal in this project, invoking software tools will come later.
 - gptONA is a proper solution for reasoning, truth maintenance and automated memory management, to build more effective adaptive systems which could operate autonomously.
 - It builds on decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
+
+**Compared to implementing a NARS via GPT:**
+
+- Compared to NarsGPT (which is roughly equally capable in terms of incremental Q&A) this project translates language into the Narsese formal language via GPT and uses ONA for reasoning.
 
 **Already supported:**
 - NARS-style declarative inference and question answering with long-term memory storage
