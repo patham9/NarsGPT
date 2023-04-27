@@ -6,7 +6,7 @@ A NARS implemented as a GPT model prompted to act like a Non-Axiomatic Logic rea
 This is the first reasoning system implementation which uses GPT for reasoning with long-term memory. Also it is following NARS principles regarding evidence tracking, memory management and attentional control which allow the system to operate in a long-term manner while being able to learn and apply new knowledge effectively.
 
 **Features:**
-- Natural Q&A interaction with the user
+- Natural open-ended Q&A interaction with the user
 - System has no initial knowledge (unless IncludeGPTKnowledge flag is set) but you can simply teach it
 - System will make NAL inferences and will raise questions
 
@@ -29,9 +29,9 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 - NarsGPT is a proper solution for reasoning, truth maintenance and automated memory management, to build more effective adaptive systems which could operate autonomously.
 - It builds on decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
 
-**Compared to NARS with GPT as natural language channel:**
+**Compared to NARS with GPT for translating English to Narsese:**
 
-- Compared to gptONA (which is roughly equally capable) this project makes no attempt to translate language into the Narsese formal language. No formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied.
+- Compared to gptONA (which is roughly equally capable in terms of incremental Q&A) this project makes no attempt to translate language into the Narsese formal language. No formal representations are used in this project but crucial evidence collection principles which support hypotheses formation in uncertain conditions are applied. The benefit is that the overall system is simpler, and that the representations can be more flexible. But they also tend to be more ambiguous and redundant, and both can cause issues in belief revision. Additionally not all inferences GPT suggests are valid, which can cause problems in incremental learning settings as more faulty conclusions can be drawn from unsupported conclusions.
 
 **Already supported:**
 - NARS-like declarative inference and question answering with long-term memory storage
