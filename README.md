@@ -1,4 +1,4 @@
-# gptONA (for NarsGPT click here: [gptONA](https://github.com/patham9/NarsGPT)
+# gptONA (for [NarsGPT](https://github.com/patham9/NarsGPT) click here)
 
 <img src="https://user-images.githubusercontent.com/8284677/234757994-5e8ad001-c5b1-4aa1-abe7-c56a4f7012dd.png" width="200px">
 
