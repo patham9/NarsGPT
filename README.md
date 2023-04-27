@@ -8,7 +8,7 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 - Natural open-ended Q&A interaction with the user
 - System has no initial knowledge (unless IncludeGPTKnowledge flag is set) but you can simply teach it
 - System will make inferences through ONA and will raise questions
-- System can point out which memory items support a specific conclusion, and how certain it is.
+- System can point out which memory items support a specific conclusion, and how certain it is
 
 **Architecture**
 
