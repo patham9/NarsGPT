@@ -27,6 +27,7 @@ from Prompts import *
 from Memory import *
 from Control import *
 import openai
+import time
 
 openai.api_key = "YOUR_KEY"
 attention_buffer_size = 20 #how large the system's attention buffer should be
@@ -49,26 +50,31 @@ if currentTime != 1:
 
 def PromptProcess(inp, buf, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
-    response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-    commands = response['choices'][0]['message']['content'].split("\n")
-    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling)
+    while True:
+        try:
+            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            commands = response['choices'][0]['message']['content'].split("\n")
+        except:
+            print("Error: API call failed, will try repeating it in 10 seconds!")
+            time.sleep(10) #wait 10 seconds
+            continue
+        break
+    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling), "\n".join(commands)
 
-while True:
-    try:
-        inp = input().rstrip("\n").strip()
-    except:
-        exit(0)
+def NarsGPT_AddInput(inp):
+    global currentTime
+    RET_ANSWER = ""
     if PrintInputSentence: print("Input:", inp)
     if inp.startswith("//"):
-        continue
+        return RET_ANSWER
     if inp.startswith("*volume="): #TODO
-        continue
+        return RET_ANSWER
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
             print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
         else:
             print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, TimeHandling = TimeHandling)[1])
-        continue
+        return RET_ANSWER
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if QuestionPriming:
             if inp.endswith("?"): #query first
@@ -82,32 +88,41 @@ while True:
                 occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
                 print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
         Memory_store(filename, memory, currentTime)
-        continue
+        return RET_ANSWER
     if inp.startswith("*memory"):
         for x in memory.items():
             print(x)
-        continue
+        return RET_ANSWER
     if inp.startswith("*time"):
         print(currentTime)
-        continue
+        return RET_ANSWER
     if inp.startswith("*buffer"):
         attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
         for x in attention_buf:
             print(x)
-        continue
+        return RET_ANSWER
     if inp.startswith("*"):
         NAR.AddInput(inp)
-        continue
+        return RET_ANSWER
     inp = inp.lower()
     if inp.endswith("?"):
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp, TimeHandling = TimeHandling)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
-        currentTime = PromptProcess(inp, buf, send_prompt, True)
+        currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size, TimeHandling = TimeHandling)
-            currentTime = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
+            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory)
     Memory_store(filename, memory, currentTime)
+    return RET_ANSWER
+
+if __name__ == "__main__":
+    while True:
+        try:
+            inp = input().rstrip("\n").strip()
+        except:
+            exit(0)
+        NarsGPT_AddInput(inp)
