@@ -10,7 +10,7 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 - System will make inferences through ONA and will raise questions
 - System can point out which memory items support a specific conclusion, and how certain it is
 
-**Architecture**
+**Architecture:**
 
 ![gptONA Architecture](https://user-images.githubusercontent.com/8284677/234759143-0fc48767-68cd-44fc-800a-fc7023e11f37.png)
 
