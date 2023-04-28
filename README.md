@@ -11,7 +11,7 @@ This is the first reasoning system implementation which uses GPT for reasoning w
 - System will make NAL inferences and will raise questions
 - System can point out which memory items support a specific conclusion, and how certain it is
 
-**Architecture**
+**Architecture:**
 
 ![NarsGPT Architecture](https://user-images.githubusercontent.com/8284677/232365471-faa3ccaf-5078-4830-905f-e8d7d520dde6.png)
 
