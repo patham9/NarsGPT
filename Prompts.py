@@ -30,7 +30,7 @@ NegatedRelationClaim(noun,verb,noun) ... this relation is claimed to be false in
 NegatedRelationClaim(noun,"IsA",noun) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 NegatedPropertyClaim(noun,"HasProperty",adjective) ... this relation is claimed to be false in the sentence with an explicit 'not' word
 
-Capture the complete sentence meaning with code that calls the four functions, and only use a single word per argument.
+Capture the complete sentence meaning with code that calls the four functions.
 Please make sure that the word "not" is not included in your call, just use the functions and Negated functions instead.
 And use verbs for comparative relations!
 
