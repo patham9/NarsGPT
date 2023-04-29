@@ -46,12 +46,6 @@ for x in sys.argv:
         openai.api_key = x.split("API_KEY=")[1]
 (memory, currentTime) = Memory_load(filename) #the ONA memory
 
-with open("mem_without_embeddings.json", 'w') as f:
-    mem_no_embeddings = {}
-    for key in memory:
-        mem_no_embeddings[key] = memory[key][0:-1]
-    json.dump(({str(k): v for k, v in mem_no_embeddings.items()}, currentTime), f)
-
 if currentTime != 1:
     NAR.AddInput(str(currentTime-1), Print=False)
 
