@@ -2,11 +2,12 @@ import json
 import openai
 import time
 import sys
+
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
 
-with open("OUT.json") as json_file:
+with open("TestOutput.json") as json_file:
     ListOfDicts, _ = json.load(json_file)
 
 # {"Line": Line, "Input": Input, "actualOutput": actualOutput, "expectedOutput": expectedOutput}
@@ -16,11 +17,8 @@ for D in ListOfDicts:
     Input = D["Input"]
     actualOutput = D["actualOutput"]
     expectedOutput = D["expectedOutput"]
-    if expectedOutput != "":
+    if expectedOutput != "" and len(D["expectedOutput"].split("/")) <= 1: #no questions about Aigo's innate time handling
         Questions.append(D)
-
-with open("QUESTIONS.json", 'w') as f:
-    json.dump(Questions, f)
     
 PROMPT = """Does the actual output contain the asked information answered in the expected output?
 The question: _QUESTION_
@@ -28,7 +26,6 @@ The actual output: _ACTUAL_OUTPUT_
 The expected output: _EXPECTED_OUTPUT_
 Please answer yes/no only!"""
 
-All = []
 Correct = []
 Incorrect = []
 for D in Questions:
@@ -54,14 +51,11 @@ for D in Questions:
         Correct.append(D)
     else:
         Incorrect.append(D)
-    All.append(D)
-    scores = {"Correct": len(Correct), "Incorrect": len(Incorrect), "Ratio" : float(len(Correct)) / float(len(All))}
+    scores = {"Correct": len(Correct), "Incorrect": len(Incorrect), "Ratio" : float(len(Correct)) / float(len(Correct)+len(Incorrect))}
     print("So far:", scores)
-    with open("All.json", 'w') as f:
-        json.dump(All, f)
     with open("Correct.json", 'w') as f:
         json.dump(Correct, f)
     with open("Incorrect.json", 'w') as f:
         json.dump(Incorrect, f)
-    with open("scores.json", 'w') as f:
+    with open("Scores.json", 'w') as f:
         json.dump(scores, f)

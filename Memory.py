@@ -35,6 +35,11 @@ import NAR
 os.chdir(cwd)
 from Truth import *
 import time
+import nltk
+from nltk import WordNetLemmatizer
+from nltk.corpus import wordnet
+nltk.download('wordnet', quiet=True)
+nltk.download('omw-1.4', quiet=True)
 
 def get_embedding_robust(inp):
     while True:
@@ -125,8 +130,6 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
-from nltk import WordNetLemmatizer
-from nltk.corpus import wordnet
 lemma = WordNetLemmatizer()
 def Lemmatize(word, tag):
     global used_verbs
