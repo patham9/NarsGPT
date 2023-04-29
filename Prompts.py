@@ -36,9 +36,7 @@ And use verbs for comparative relations!
 
 The sentence: __CURRENT_SENTENCE__
 
-Encode all relations in the sentence, and the sentence has to be believed!
-
-"""
+Encode all relations in the sentence, and the sentence has to be believed!"""
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.
