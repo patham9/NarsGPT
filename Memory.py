@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  * """
 
+from openai.embeddings_utils import get_embedding, cosine_similarity
 from ast import literal_eval
 from os.path import exists
 import json
@@ -33,49 +34,18 @@ os.chdir(cwd + "/OpenNARS-for-Applications/misc/Python/")
 import NAR
 os.chdir(cwd)
 from Truth import *
+import time
 
-def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
-    primed = {}
-    words = [x.strip().replace("?","") for x in inp.split(" ")]
-    for x in words:
-        n = Lemmatize(x, wordnet.NOUN)
-        v = Lemmatize(x, wordnet.VERB)
-        for m in list(memory.items()):
-            padded = lambda w: " " + w.replace(">"," ").replace("<"," ").replace("("," ").replace(")"," ") + " "
-            if padded(n) in padded(m[0][0]) or padded(v) in padded(m[0][0]):
-                if m not in attention_buf:
-                    matchQuality = 2 if (padded(n) in padded(m[0][0]) and padded(v) in padded(m[0][0])) else 1
-                    if m[0] not in primed:
-                        primed[m[0]] = (matchQuality, m[1])
-                    else:
-                        primed[m[0]] = (primed[m[0]][0] + matchQuality, primed[m[0]][1])
-    primed = list(primed.items())
-    primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
-    primed = primed[:max_LTM_retrievals]
-    #for m in primed:
-    #    print("//Retrieved from LTM:", m)
-    primed = [(x[0],x[1][1]) for x in primed]
-    return list(reversed(primed))
-
-def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
-    attention_buf=[]
-    relevant_item_list = list(memory.items())
-    #find attention_buffer_size/2 newest items:
-    relevant_item_list.sort(key=lambda x: -x[1][0])
-    attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
-    #find additional attention_buffer_size/2 useful items which were not already part of the newest
-    relevant_item_list.sort(key=lambda x: -x[1][1])
-    for x in attention_buf:
-        if x in relevant_item_list:
-            relevant_item_list.remove(x) #so we won't select it as it is already part of mem
-    i = 0
-    while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
-        attention_buf = [relevant_item_list[i]] + attention_buf
-        i += 1
-    #pull in question content that is not already included
-    if inpQuestion is not None:
-        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) + attention_buf
-    return attention_buf
+def get_embedding_robust(inp):
+    while True:
+        try:
+            ret = get_embedding(inp)
+        except:
+            print("//Failed get embedding, will retry API call in 10s")
+            time.sleep(10)
+            continue
+        break
+    return ret
 
 def ProductPrettify(term):
     if " --> " in term and " * " in term.split(" --> ")[0]:
@@ -84,6 +54,61 @@ def ProductPrettify(term):
         relarg = term.split(" --> ")[1].strip()
         term = arg1 + " " + relarg + " " + arg2
     return term.replace("(","").replace(")","")
+
+def Term_AsSentence(T):
+    term = T[1:-1] if "<" in T else T
+    if "=/>" not in term:
+        term = ProductPrettify(term)
+    else:
+        if " =/> " in term:
+            prec_op = [ProductPrettify(p) for p in term.split(" =/> ")[0].split(" &/ ")]
+            removeParentheses = lambda u: u.replace(" --> ["," hasproperty ").replace(" --> "," isa ").replace(" - ", " and not ").replace("(",""). \
+                                            replace("<","").replace(")","").replace(">","").replace("  "," ").strip()
+            precs = removeParentheses(" and when then ".join(prec_op[:-1]))
+            op = prec_op[-1]
+            if " --> " in op:
+                op = removeParentheses(prec_op[-1].split(" --> ")[1] + " " + prec_op[-1].split(" --> ")[0]).replace("{SELF} *", "")
+            term = "When '" + precs + "' then '" + removeParentheses(op) + "' causes '" + removeParentheses(term.split(" =/> ")[1]) + "'"
+    term = term.replace(" --> [", " hasproperty ").replace("]","").replace("[","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
+    return term
+
+def Term_Embedded(T):
+    return get_embedding_robust(Term_AsSentence(T).replace("-"," ").replace("_"," "))
+
+def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=30):
+    primed = {}
+    qu_embed = get_embedding_robust(inp)
+    for m in list(memory.items()):
+        if m not in attention_buf:
+            matchQuality = cosine_similarity(qu_embed, m[1][3])
+            primed[m[0]] = (matchQuality, m[1])
+    primed = list(primed.items())
+    primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
+    primed = primed[:max_LTM_retrievals]
+    #for m in primed:
+    #    print("//Retrieved from LTM:", m[0], m[1][:-1])
+    primed = [(x[0],x[1][1]) for x in primed]
+    return list(reversed(primed))
+
+def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
+    attention_buf=[]
+    #relevant_item_list = list(memory.items())
+    #find attention_buffer_size/2 newest items:
+    #relevant_item_list.sort(key=lambda x: -x[1][0])
+    #attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
+    #find additional attention_buffer_size/2 useful items which were not already part of the newest
+    #relevant_item_list.sort(key=lambda x: -x[1][1])
+    #for x in attention_buf:
+    #    if x in relevant_item_list:
+    #        relevant_item_list.remove(x) #so we won't select it as it is already part of mem
+    #i = 0
+    #while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
+    #    attention_buf = [relevant_item_list[i]] + attention_buf
+    #    i += 1
+    #pull in question content that is not already included
+    if inpQuestion is not None:
+        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) #+ attention_buf
+    return attention_buf
 
 def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
     prompt_memory = ""
@@ -110,20 +135,7 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
             flags.append("Contradictory")
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
-        term = x[0][0][1:-1] if "<" in x[0][0] else x[0][0]
-        if "=/>" not in term:
-            term = ProductPrettify(term)
-        else:
-            if " =/> " in term:
-                prec_op = [ProductPrettify(p) for p in term.split(" =/> ")[0].split(" &/ ")]
-                removeParentheses = lambda u: u.replace(" --> ["," hasproperty ").replace(" --> "," isa ").replace(" - ", " and not ").replace("(",""). \
-                                                replace("<","").replace(")","").replace(">","").replace("  "," ").strip()
-                precs = removeParentheses(" and when then ".join(prec_op[:-1]))
-                op = prec_op[-1]
-                if " --> " in op:
-                    op = removeParentheses(prec_op[-1].split(" --> ")[1] + " " + prec_op[-1].split(" --> ")[0]).replace("{SELF} *", "")
-                term = "When '" + precs + "' then '" + removeParentheses(op) + "' causes '" + removeParentheses(term.split(" =/> ")[1]) + "'"
-        term = term.replace(" --> [", " hasproperty ").replace("]","").replace("[","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
+        term = Term_AsSentence(x[0][0])
         prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
@@ -153,7 +165,7 @@ def query(currentTime, memory, term, time):
         return currentTime
     if (term, time) not in retrieved and (term, time) in memory:
         retrieved.add((term, time))
-        (_, _, (f, c)) = memory[(term, time)]
+        (_, _, (f, c), _) = memory[(term, time)]
         if time == "eternal":
             _, currentTime = ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
         if time == currentTime:
@@ -162,7 +174,7 @@ def query(currentTime, memory, term, time):
         parts = term.split("?1")
         bestTerm, bestTruth, bestTime = (None, (0.0, 0.5), "eternal")
         for (term2, time2) in memory:
-            (_, _, (f2, c2)) = memory[(term2, time2)]
+            (_, _, (f2, c2), _) = memory[(term2, time2)]
             if time2 == time and term2.startswith(parts[0]) and term2.endswith(parts[1]):
                 if Truth_Expectation((f2, c2)) > Truth_Expectation((bestTruth[0], bestTruth[1])):
                     bestTerm = term2
@@ -206,11 +218,11 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
                 if (term, time) in memory:
-                    (t, usefulness, (f, c)) = memory[(term, time)]
+                    (t, usefulness, (f, c), embedding) = memory[(term, time)]
                     if c2 > c:
-                        memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2))
+                        memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2), embedding)
                 else:
-                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2))
+                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), Term_Embedded(term))
     if ">." in inputforNAR or "! :|:" in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():
@@ -220,7 +232,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     global relations
-    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
+    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -238,7 +250,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True, currentTime
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
+    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -252,6 +264,7 @@ lastTime = 0
 hadRelation = set([])
 def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling):
     global lastTime, hadRelation
+    #print(">>>>", sentence)
     if currentTime != lastTime:
         hadRelation = set([])
     if sentence in hadRelation:
@@ -312,7 +325,7 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
         belief = memory[(m, t)]
         if t != "eternal" and currentTime - t > eternalizationDistance:
             deletes.append((m, t))
-            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]))))
+            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]), belief[3])))
     for k in deletes:
         del memory[k]
     for (k, v) in additions:
