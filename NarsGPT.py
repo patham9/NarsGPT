@@ -30,11 +30,12 @@ import openai
 import time
 
 openai.api_key = "YOUR_KEY"
-memoryViewSize = 30        #how many relevant (judged by statement embedding) ONA memory items GPT can see
-viewAsEternalDistance = 3  #how many timesteps of previous ONA events are visible to GPT
+relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
+recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
+eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
-PrintInputSentence = False or "PrintInputSentence" in sys.argv
+PrintInputSentence = True and "NoPrintInputSentence" not in sys.argv
 PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
@@ -73,7 +74,7 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", memoryViewSize, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
         return RET_ANSWER
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if QuestionPriming:
@@ -99,7 +100,7 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*buffer"):
         if inp.endswith("?"):
-            attention_buf = Memory_generate_prompt(currentTime, memory, "","", memoryViewSize, inp[:-1].split("*buffer=")[1], TimeHandling = TimeHandling)[0]
+            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1], TimeHandling = TimeHandling)[0]
             for x in attention_buf:
                 print(x[0], x[1][:-1])
         return RET_ANSWER
@@ -108,17 +109,16 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     inp = inp.lower()
     if inp.endswith("?"):
-        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", memoryViewSize, inp, TimeHandling = TimeHandling)
+        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp, TimeHandling = TimeHandling)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
-            send_prompt = Prompts_belief.replace("__CURRENT_SENTENCE__", inp)
-            if PrintGPTPrompt: print("vvvvv"); print(send_prompt); print("^^^^^")
-            currentTime, RET_ANSWER = PromptProcess(inp, {}, send_prompt, False)
+            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize, TimeHandling = TimeHandling)
+            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
-        Memory_Eternalize(currentTime, memory, viewAsEternalDistance)
+        Memory_Eternalize(currentTime, memory, eternalizationDistance)
         Memory_store(filename, memory, currentTime)
     return RET_ANSWER
 

@@ -80,11 +80,11 @@ def Term_AsSentence(T):
 def Term_Embedded(T):
     return get_embedding_robust(Term_AsSentence(T).replace("-"," ").replace("_"," "))
 
-def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=30):
+def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
     primed = {}
     qu_embed = get_embedding_robust(inp)
     for m in list(memory.items()):
-        if m not in attention_buf:
+        if m not in view:
             matchQuality = cosine_similarity(qu_embed, m[1][3])
             primed[m[0]] = (matchQuality, m[1])
     primed = list(primed.items())
@@ -95,15 +95,19 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=30):
     primed = [(x[0],x[1][1]) for x in primed]
     return list(reversed(primed))
 
-def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
-    attention_buf=[]
+def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
+    view=[]
+    recent_item_list = list(memory.items())
+    #find recentViewSize items:
+    recent_item_list.sort(key=lambda x: -x[1][0])
+    view += reversed(recent_item_list[0:recentViewSize]) #newer comes later in prompt
     if inpQuestion is not None:
-        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion, attention_buffer_size)
-    return attention_buf
+        view = RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize) + view
+    return view
 
-def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
+def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None, TimeHandling = True):
     prompt_memory = ""
-    buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
+    buf = Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
@@ -200,7 +204,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 if term.startswith("<[") or (" --> " in term and " * " in term.split(" --> ")[1]):
                     continue
                 time = derivation["occurrenceTime"]
-                if time.isdigit():
+                if str(time).isdigit():
                     time = int(time)
                 currentTime = query(currentTime, memory, term, time)
                 f2 = float(derivation["truth"]["frequency"])
@@ -310,16 +314,16 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
             item = buf[index]
             query(currentTime, memory, item[0][0], item[0][1])
             
-def Memory_Eternalize(currentTime, memory, viewAsEternalDistance):
+def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     deletes = []
     additions = []
     for (m, t) in memory:
         belief = memory[(m, t)]
-        if t != "eternal" and currentTime - t > viewAsEternalDistance:
+        if t != "eternal" and currentTime - t > eternalizationDistance:
             deletes.append((m, t))
             #Get belief truth from ONA
             answers = NAR.AddInput(m + "?", Print=False)["answers"]
-            if answers:
+            if answers and "truth" in answers[0]:
                 f,c = float(answers[0]["truth"]["frequency"]), float(answers[0]["truth"]["confidence"])
                 additions.append(((m, "eternal"), (belief[0], belief[1], (f,c), belief[3])))
     for k in deletes:
