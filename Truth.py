@@ -32,6 +32,3 @@ def Truth_Projection(v, originalTime, targetTime):
     
 def Truth_w2c(w):
     return w / (w + 1)
-
-def Truth_Eternalize(v):
-    return (v[0], Truth_w2c(v[1]))

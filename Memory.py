@@ -166,7 +166,7 @@ def query(currentTime, memory, term, time):
                     bestTerm = term2
                     bestTruth = (f2, c2)
                     bestTime = time2
-        if bestTerm is not None:
+        if bestTerm is not None and (bestTerm, bestTime) not in retrieved:
             retrieved.add((bestTerm, bestTime))
             if bestTime == "eternal":
                 _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
@@ -307,14 +307,18 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
             item = buf[index]
             query(currentTime, memory, item[0][0], item[0][1])
             
-def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
+def Memory_Eternalize(currentTime, memory, viewAsEternalDistance):
     deletes = []
     additions = []
     for (m, t) in memory:
         belief = memory[(m, t)]
-        if t != "eternal" and currentTime - t > eternalizationDistance:
+        if t != "eternal" and currentTime - t > viewAsEternalDistance:
             deletes.append((m, t))
-            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]), belief[3])))
+            #Get belief truth from ONA
+            answers = NAR.AddInput(m + "?", Print=False)["answers"]
+            if answers:
+                f,c = float(answers[0]["truth"]["frequency"]), float(answers[0]["truth"]["confidence"])
+                additions.append(((m, "eternal"), (belief[0], belief[1], (f,c), belief[3])))
     for k in deletes:
         del memory[k]
     for (k, v) in additions:
