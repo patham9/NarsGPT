@@ -75,7 +75,7 @@ def Term_AsSentence(T):
 def Term_Embedded(T):
     return get_embedding_robust(Term_AsSentence(T).replace("-"," ").replace("_"," "))
 
-def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
+def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=30):
     primed = {}
     qu_embed = get_embedding_robust(inp)
     for m in list(memory.items()):
@@ -86,28 +86,28 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
     primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
     primed = primed[:max_LTM_retrievals]
     #for m in primed:
-    #    print("//Retrieved from LTM:", m)
+    #    print("//Retrieved from LTM:", m[0], m[1][:-1])
     primed = [(x[0],x[1][1]) for x in primed]
     return list(reversed(primed))
 
 def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
     attention_buf=[]
-    relevant_item_list = list(memory.items())
+    #relevant_item_list = list(memory.items())
     #find attention_buffer_size/2 newest items:
-    relevant_item_list.sort(key=lambda x: -x[1][0])
-    attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
+    #relevant_item_list.sort(key=lambda x: -x[1][0])
+    #attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
     #find additional attention_buffer_size/2 useful items which were not already part of the newest
-    relevant_item_list.sort(key=lambda x: -x[1][1])
-    for x in attention_buf:
-        if x in relevant_item_list:
-            relevant_item_list.remove(x) #so we won't select it as it is already part of mem
-    i = 0
-    while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
-        attention_buf = [relevant_item_list[i]] + attention_buf
-        i += 1
+    #relevant_item_list.sort(key=lambda x: -x[1][1])
+    #for x in attention_buf:
+    #    if x in relevant_item_list:
+    #        relevant_item_list.remove(x) #so we won't select it as it is already part of mem
+    #i = 0
+    #while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
+    #    attention_buf = [relevant_item_list[i]] + attention_buf
+    #    i += 1
     #pull in question content that is not already included
     if inpQuestion is not None:
-        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) + attention_buf
+        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) #+ attention_buf
     return attention_buf
 
 def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
@@ -232,7 +232,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     global relations
-    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
+    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -250,7 +250,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True, currentTime
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s.replace("_", " ") not in inp or p.replace("_", " ") not in inp:
+    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -264,6 +264,7 @@ lastTime = 0
 hadRelation = set([])
 def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling):
     global lastTime, hadRelation
+    #print(">>>>", sentence)
     if currentTime != lastTime:
         hadRelation = set([])
     if sentence in hadRelation:

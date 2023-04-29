@@ -45,6 +45,12 @@ for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
 (memory, currentTime) = Memory_load(filename) #the ONA memory
+
+with open("keys.json", 'w') as f:
+    json.dump(list(memory.keys()), f)
+
+
+
 if currentTime != 1:
     NAR.AddInput(str(currentTime-1), Print=False)
 
