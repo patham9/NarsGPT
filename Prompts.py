@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  * """
 
-Prompts_belief_start = """
+Prompts_belief = """
 RelationClaim(noun,verb,noun) ... this relation is claimed to be true in the sentence
 RelationClaim(noun,"IsA",noun) ... this relation is claimed to be true in the sentence
 PropertyClaim(noun,"HasProperty", adjective) ... this relation is claimed to be true in the sentence
@@ -34,10 +34,11 @@ Capture the complete sentence meaning with code that calls the four functions.
 Please make sure that the word "not" is not included in your call, just use the functions and Negated functions instead.
 And use verbs for comparative relations!
 
-Memory:
-"""
+The sentence: __CURRENT_SENTENCE__
 
-Prompts_belief_end = "Encode all relations in the sentence, and the sentence has to be believed!"
+Encode all relations in the sentence, and the sentence has to be believed!
+
+"""
 
 Prompts_question_start = """
 Mention concrete memory contents with certainty values.

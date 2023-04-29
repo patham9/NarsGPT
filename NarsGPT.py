@@ -30,7 +30,7 @@ import openai
 import time
 
 openai.api_key = "YOUR_KEY"
-attention_buffer_size = 20 #how large the system's attention buffer should be
+attention_buffer_size = 30 #how large the system's attention buffer should be
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
@@ -46,10 +46,11 @@ for x in sys.argv:
         openai.api_key = x.split("API_KEY=")[1]
 (memory, currentTime) = Memory_load(filename) #the ONA memory
 
-with open("keys.json", 'w') as f:
-    json.dump(list(memory.keys()), f)
-
-
+with open("mem_without_embeddings.json", 'w') as f:
+    mem_no_embeddings = {}
+    for key in memory:
+        mem_no_embeddings[key] = memory[key][0:-1]
+    json.dump(({str(k): v for k, v in mem_no_embeddings.items()}, currentTime), f)
 
 if currentTime != 1:
     NAR.AddInput(str(currentTime-1), Print=False)
@@ -78,8 +79,6 @@ def NarsGPT_AddInput(inp):
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
             print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
-        else:
-            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, TimeHandling = TimeHandling)[1])
         return RET_ANSWER
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if QuestionPriming:
@@ -93,7 +92,8 @@ def NarsGPT_AddInput(inp):
             else:
                 occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
                 print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
-        Memory_store(filename, memory, currentTime)
+        if not inp.endswith("?"):
+            Memory_store(filename, memory, currentTime)
         return RET_ANSWER
     if inp.startswith("*memory"):
         for x in memory.items():
@@ -103,9 +103,10 @@ def NarsGPT_AddInput(inp):
         print(currentTime)
         return RET_ANSWER
     if inp.startswith("*buffer"):
-        attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
-        for x in attention_buf:
-            print(x[0], x[1][:-1])
+        if inp.endswith("?"):
+            attention_buf = Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*buffer=")[1], TimeHandling = TimeHandling)[0]
+            for x in attention_buf:
+                print(x[0], x[1][:-1])
         return RET_ANSWER
     if inp.startswith("*"):
         NAR.AddInput(inp)
@@ -117,12 +118,13 @@ def NarsGPT_AddInput(inp):
         currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
-            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size, TimeHandling = TimeHandling)
-            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
+            send_prompt = Prompts_belief.replace("__CURRENT_SENTENCE__", inp)
+            if PrintGPTPrompt: print("vvvvv"); print(send_prompt); print("^^^^^")
+            currentTime, RET_ANSWER = PromptProcess(inp, {}, send_prompt, False)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory)
-    Memory_store(filename, memory, currentTime)
+        Memory_store(filename, memory, currentTime)
     return RET_ANSWER
 
 if __name__ == "__main__":

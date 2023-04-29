@@ -92,22 +92,8 @@ def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=30):
 
 def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
     attention_buf=[]
-    #relevant_item_list = list(memory.items())
-    #find attention_buffer_size/2 newest items:
-    #relevant_item_list.sort(key=lambda x: -x[1][0])
-    #attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
-    #find additional attention_buffer_size/2 useful items which were not already part of the newest
-    #relevant_item_list.sort(key=lambda x: -x[1][1])
-    #for x in attention_buf:
-    #    if x in relevant_item_list:
-    #        relevant_item_list.remove(x) #so we won't select it as it is already part of mem
-    #i = 0
-    #while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
-    #    attention_buf = [relevant_item_list[i]] + attention_buf
-    #    i += 1
-    #pull in question content that is not already included
     if inpQuestion is not None:
-        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion) #+ attention_buf
+        attention_buf = RetrieveQuestionContent(memory, attention_buf, inpQuestion, attention_buffer_size)
     return attention_buf
 
 def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None, TimeHandling = True):
@@ -229,10 +215,13 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
         currentTime += int(inputforNAR)
     return ret, currentTime
 
+def notIncluded(word, inp):
+    return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
+
 relations = set(["isa", "are", "hasproperty"])
 def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     global relations
-    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
+    if notIncluded(s, inp) or notIncluded(p, inp):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -250,7 +239,7 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
     return True, currentTime
 
 def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if s.replace("_", " ") not in inp.replace(". "," ").replace("'","") or p.replace("_", " ") not in inp.replace(". "," ").replace("'",""):
+    if notIncluded(s, inp) or notIncluded(p, inp):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
