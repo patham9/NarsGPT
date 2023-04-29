@@ -91,7 +91,7 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*memory"):
         for x in memory.items():
-            print(x)
+            print(x[0], x[1][:-1])
         return RET_ANSWER
     if inp.startswith("*time"):
         print(currentTime)
@@ -99,7 +99,7 @@ def NarsGPT_AddInput(inp):
     if inp.startswith("*buffer"):
         attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
         for x in attention_buf:
-            print(x)
+            print(x[0], x[1][:-1])
         return RET_ANSWER
     if inp.startswith("*"):
         NAR.AddInput(inp)
