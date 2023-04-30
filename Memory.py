@@ -152,10 +152,21 @@ def Lemmatize(word, tag):
     return ret
 
 retrieved = set([])
+def Allow_requery_if_not_in_ONA(term, time):
+    #check if previously queried item is not in ONA memory anymore else we need
+    #to set it up for re-query by removing it from retrieved
+    if (term, time) in retrieved:
+        ret = NAR.AddInput(term + "?", Print=False)
+        if "answers" in ret and ret["answers"]:
+            answer = ret["answers"][0]
+            if "truth" not in answer and answer["term"] == "None":
+                retrieved.remove(term, time)
+
 def query(currentTime, memory, term, time):
     global retrieved
     if time != "eternal":
         return currentTime
+    Allow_requery_if_not_in_ONA(term, time)
     if (term, time) not in retrieved and (term, time) in memory:
         retrieved.add((term, time))
         (_, _, (f, c), _) = memory[(term, time)]
@@ -173,6 +184,8 @@ def query(currentTime, memory, term, time):
                     bestTerm = term2
                     bestTruth = (f2, c2)
                     bestTime = time2
+        if bestTerm is not None:
+            Allow_requery_if_not_in_ONA(bestTerm, time)
         if bestTerm is not None and (bestTerm, bestTime) not in retrieved:
             retrieved.add((bestTerm, bestTime))
             if bestTime == "eternal":
@@ -293,7 +306,7 @@ def Memory_store(filename, memory, currentTime):
 
 def Memory_QuestionPriming(currentTime, cmd, memory, buf):
     #1. get all memory index references
-    indexrefs = [x+" " for x in cmd.split("i=")]
+    indexrefs = [x+" " for x in cmd.replace("i=", "item ").split("item ")]
     indices=[]
     for valstr in indexrefs:
         curdigits = ""
@@ -305,7 +318,7 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
                 if curdigits.isdigit():
                     indices.append(int(curdigits))
                     curdigits = ""
-                if valstr[i] != ",":
+                if valstr[i] != "," and valstr[i] != "-":
                     break
             i += 1
     #2. check if they are in buf and prime ONA's memory with the question which will activate the concepts:
