@@ -89,6 +89,7 @@ def NarsGPT_AddInput(inp):
                 occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
                 print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
         if not inp.endswith("?"):
+            Memory_Eternalize(currentTime, memory, eternalizationDistance)
             Memory_store(filename, memory, currentTime)
         return RET_ANSWER
     if inp.startswith("*memory"):

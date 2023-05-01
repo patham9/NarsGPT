@@ -228,8 +228,14 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                     if c2 > c:
                         memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2), embedding)
                 else:
-                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), Term_Embedded(term))
-    if ">." in inputforNAR or "! :|:" in inputforNAR:
+                    #optimization: if there is already an eternalized version with the same term, use that embedding:
+                    if (term, "eternal") in memory:
+                        embedding = memory[(term, "eternal")][3]
+                    else:
+                        embedding = Term_Embedded(term)
+                    #now where we got the embedding too, make entry to memory:
+                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), embedding)
+    if ">." in inputforNAR or "! :|:" in inputforNAR or ". :|:" in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():
         currentTime += int(inputforNAR)
