@@ -46,10 +46,9 @@ TimeHandling = True and "NoTimeHandling" not in sys.argv
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-(memory, currentTime) = Memory_load(filename) #the ONA memory
-
-if currentTime != 1:
-    NAR.AddInput(str(currentTime-1), Print=False)
+(memory, currentTime, maxBaseId) = Memory_load(filename) #the ONA memory
+NAR.AddInput("*currenttime=" + str(currentTime))
+NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
 def PromptProcess(inp, buf, send_prompt, isQuestion):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")

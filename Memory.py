@@ -85,7 +85,7 @@ def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
     qu_embed = get_embedding_robust(inp)
     for m in list(memory.items()):
         if m not in view:
-            matchQuality = cosine_similarity(qu_embed, m[1][3])
+            matchQuality = cosine_similarity(qu_embed, m[1][4])
             primed[m[0]] = (matchQuality, m[1])
     primed = list(primed.items())
     primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
@@ -169,25 +169,28 @@ def query(currentTime, memory, term, time):
     Allow_requery_if_not_in_ONA(term, time)
     if (term, time) not in retrieved and (term, time) in memory:
         retrieved.add((term, time))
-        (_, _, (f, c), _) = memory[(term, time)]
+        (_, _, (f, c), stamp, _) = memory[(term, time)]
+        NAR.AddInput("*stampimport=" + str(stamp), Print=False)
         if time == "eternal":
             _, currentTime = ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
         if time == currentTime:
             _, currentTime = ProcessInput(currentTime, memory, f"{term}. :|: {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
-        bestTerm, bestTruth, bestTime = (None, (0.0, 0.5), "eternal")
+        bestTerm, bestTruth, bestTime, bestStamp = (None, (0.0, 0.5), "eternal", [])
         for (term2, time2) in memory:
-            (_, _, (f2, c2), _) = memory[(term2, time2)]
+            (_, _, (f2, c2), stamp, _) = memory[(term2, time2)]
             if time2 == time and term2.startswith(parts[0]) and term2.endswith(parts[1]):
                 if Truth_Expectation((f2, c2)) > Truth_Expectation((bestTruth[0], bestTruth[1])):
                     bestTerm = term2
                     bestTruth = (f2, c2)
                     bestTime = time2
+                    bestStamp = stamp
         if bestTerm is not None:
             Allow_requery_if_not_in_ONA(bestTerm, time)
         if bestTerm is not None and (bestTerm, bestTime) not in retrieved:
             retrieved.add((bestTerm, bestTime))
+            NAR.AddInput("*stampimport=" + str(bestStamp), Print=False)
             if bestTime == "eternal":
                 _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
             if bestTime == "currentTime":
@@ -217,6 +220,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 if term.startswith("<[") or (" --> " in term and " * " in term.split(" --> ")[1]):
                     continue
                 time = derivation["occurrenceTime"]
+                stamp = derivation["Stamp"]
                 if str(time).isdigit():
                     time = int(time)
                 currentTime = query(currentTime, memory, term, time)
@@ -224,17 +228,17 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
                 if (term, time) in memory:
-                    (t, usefulness, (f, c), embedding) = memory[(term, time)]
+                    (t, usefulness, (f, c), _, embedding) = memory[(term, time)]
                     if c2 > c:
-                        memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2), embedding)
+                        memory[(term, time)] = (currentTime, usefulness + usefulnessAddition, (f2, c2), stamp, embedding)
                 else:
                     #optimization: if there is already an eternalized version with the same term, use that embedding:
                     if (term, "eternal") in memory:
-                        embedding = memory[(term, "eternal")][3]
+                        embedding = memory[(term, "eternal")][4]
                     else:
                         embedding = Term_Embedded(term)
                     #now where we got the embedding too, make entry to memory:
-                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), embedding)
+                    memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), stamp, embedding)
     if ">." in inputforNAR or "! :|:" in inputforNAR or ". :|:" in inputforNAR:
         currentTime += 1
     if inputforNAR.isdigit():
@@ -304,7 +308,10 @@ def Memory_load(filename):
             print("//Loaded memory content from", filename)
             (mt, currentTime) = json.load(json_file)
             memory = {literal_eval(k): v for k, v in mt.items()}
-    return (memory, currentTime)
+    maxBaseId = 0
+    for key in memory:
+        maxBaseId = max([maxBaseId] + memory[key][3])
+    return (memory, currentTime, maxBaseId)
 
 def Memory_store(filename, memory, currentTime):
     with open(filename, 'w') as f:
@@ -344,7 +351,8 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
             answers = NAR.AddInput(m + "?", Print=False)["answers"]
             if answers and "truth" in answers[0]:
                 f,c = float(answers[0]["truth"]["frequency"]), float(answers[0]["truth"]["confidence"])
-                additions.append(((m, "eternal"), (belief[0], belief[1], (f,c), belief[3])))
+                stamp = answers[0]["Stamp"]
+                additions.append(((m, "eternal"), (belief[0], belief[1], (f,c), stamp, belief[4])))
     for k in deletes:
         del memory[k]
     for (k, v) in additions:
