@@ -173,14 +173,12 @@ def query(currentTime, memory, term, time):
         NAR.AddInput("*stampimport=" + str(stamp), Print=False)
         if time == "eternal":
             _, currentTime = ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
-        if time == currentTime:
-            _, currentTime = ProcessInput(currentTime, memory, f"{term}. :|: {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
         bestTerm, bestTruth, bestTime, bestStamp = (None, (0.0, 0.5), "eternal", [])
         for (term2, time2) in memory:
             (_, _, (f2, c2), stamp, _) = memory[(term2, time2)]
-            if time2 == time and term2.startswith(parts[0]) and term2.endswith(parts[1]):
+            if time2 == "eternal" and term2.startswith(parts[0]) and term2.endswith(parts[1]):
                 if Truth_Expectation((f2, c2)) > Truth_Expectation((bestTruth[0], bestTruth[1])):
                     bestTerm = term2
                     bestTruth = (f2, c2)
@@ -193,8 +191,6 @@ def query(currentTime, memory, term, time):
             NAR.AddInput("*stampimport=" + str(bestStamp), Print=False)
             if bestTime == "eternal":
                 _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
-            if bestTime == "currentTime":
-                _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. :|: {{{bestTruth[0]} {bestTruth[1]}}}")
     retrieved.add((term, time))
     return currentTime
 
