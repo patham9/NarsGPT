@@ -105,9 +105,10 @@ def NarsGPT_AddInput(inp):
         Memory_store(filename, memory, currentTime, evidentalBaseID)
     return RET_ANSWER
 
-while True:
-    try:
-        inp = input().rstrip("\n").strip().lower()
-    except:
-        exit(0)
-    NarsGPT_AddInput(inp)
+if __name__ == "__main__":
+    while True:
+        try:
+            inp = input().rstrip("\n").strip().lower()
+        except:
+            exit(0)
+        NarsGPT_AddInput(inp)
