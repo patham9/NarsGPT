@@ -105,7 +105,7 @@ def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
         view = RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize) + view
     return view
 
-def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None, TimeHandling = True):
+def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None):
     prompt_memory = ""
     buf = Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion)
     if len(buf) == 0:

@@ -73,7 +73,7 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1])[1])
         else:
             print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
         return RET_ANSWER
@@ -102,12 +102,12 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*buffer"):
         if inp.endswith("?"):
-            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1], TimeHandling = TimeHandling)[0]
-            for x in attention_buf:
+            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1])[0]
+            for x in memory_view:
                 print(x[0], x[1][:-1])
         else:
-            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
-            for x in attention_buf:
+            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
+            for x in memory_view:
                 print(x[0], x[1][:-1])
         return RET_ANSWER
     if inp.startswith("*"):
@@ -115,12 +115,12 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     inp = inp.lower()
     if inp.endswith("?"):
-        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp, TimeHandling = TimeHandling)
+        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():
-            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize, TimeHandling = TimeHandling)
+            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
             currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
