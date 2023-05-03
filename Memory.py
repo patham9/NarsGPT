@@ -342,8 +342,12 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     for (m, t) in memory:
         belief = memory[(m, t)]
         if t != "eternal" and currentTime - t > eternalizationDistance:
-            previous_lastUsed = memory[(m, t)][0]
-            previous_useCount = memory[(m, t)][1]
+            previous_lastUsed = 0
+            previous_useCount = 0
+            if (m, "eternal") in memory:
+                belief_old = memory[(m, "eternal")]
+                previous_lastUsed = belief_old[0]
+                previous_useCount = belief_old[1]
             deletes.append((m, t))
             #Get belief truth from ONA
             answers = NAR.AddInput(m + "?", Print=False)["answers"]
