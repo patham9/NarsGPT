@@ -40,7 +40,9 @@ def get_embedding_robust(inp):
         break
     return ret
 
+lastRetrieval = []
 def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
+    global lastRetrieval
     primed = {}
     qu_embed = get_embedding_robust(inp)
     for m in list(memory.items()):
@@ -53,7 +55,7 @@ def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
     #for m in primed:
     #    print("//Retrieved from LTM:", m[0], m[1][:-1])
     primed = [(x[0],x[1][1]) for x in primed]
-    return list(reversed(primed))
+    lastRetrieval = list(reversed(primed))
 
 def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
     view=[]
@@ -62,8 +64,8 @@ def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
     recent_item_list.sort(key=lambda x: -x[1][0])
     view += reversed(recent_item_list[0:recentViewSize]) #newer comes later in prompt
     if inpQuestion is not None:
-        view = RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize) + view
-    return view
+        RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize)
+    return lastRetrieval + view
 
 def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None):
     prompt_memory = ""
@@ -91,7 +93,7 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
         certainty = Truth_Expectation((f,c))
         truthtype = '"' + " ".join(flags) + '"'
         prompt_memory += f"i={i}: {x[0][0]}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
-    return prompt_start + prompt_memory + prompt_end
+    return buf, prompt_start + prompt_memory + prompt_end
 
 def Memory_digest_sentence(usedTime, memory, sentence, truth, stamp, taskTime, PrintMemoryUpdates, TimeHandling):
     occurrenceTime = taskTime if TimeHandling else "eternal"

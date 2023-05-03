@@ -23,6 +23,7 @@
  * """
 
 import sys
+import time
 from Prompts import *
 from Memory import *
 from Control import *
@@ -49,43 +50,64 @@ for x in sys.argv:
 def PromptProcess(inp, send_prompt, isQuestion):
     global evidentalBaseID
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
-    response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-    commands = response['choices'][0]['message']['content'].split("\n")
+    while True:
+        try:
+            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            commands = response['choices'][0]['message']['content'].split("\n")
+        except:
+            print("Error: API call failed, will try repeating it in 10 seconds!")
+            time.sleep(10) #wait 10 seconds
+            continue
+        break
     evidentalBaseID = Control_cycle(inp, memory, commands, isQuestion, currentTime, evidentalBaseID, PrintMemoryUpdates, PrintTruthValues, TimeHandling)
+    return "\n".join(commands)
+
+def NarsGPT_AddInput(inp):
+    global currentTime
+    RET_ANSWER = ""
+    if PrintInputSentence: print("Input:", inp)
+    if inp.startswith("*volume="): #TODO
+        return RET_ANSWER
+    if inp.startswith("*prompt"):
+        if inp.endswith("?"):
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1])[1])
+        else:
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
+        return RET_ANSWER
+    if inp.startswith("*memory"):
+        for x in memory.items():
+            print(x[0], x[1][:-1])
+        return RET_ANSWER
+    if inp.startswith("*buffer"):
+        if inp.endswith("?"):
+            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1])[0]
+            for x in attention_buf:
+                print(x[0], x[1][:-1])
+        else:
+            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
+            for x in attention_buf:
+                print(x[0], x[1][:-1])
+        return RET_ANSWER
+    if inp.startswith("//") or inp.startswith("*"):
+        return RET_ANSWER
+    if inp.endswith("?"):
+        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
+        send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
+        RET_ANSWER = PromptProcess(inp, send_prompt, True)
+    else:
+        if len(inp) > 0 and inp != "1":
+            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
+            RET_ANSWER = PromptProcess(inp, text + inp + Prompts_belief_end, False)
+        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_inference_start, "\n", relevantViewSize, recentViewSize)
+        PromptProcess(inp, text + Prompts_inference_end, False)
+        currentTime += 1
+        Memory_Eternalize(currentTime, memory)
+        Memory_store(filename, memory, currentTime, evidentalBaseID)
+    return RET_ANSWER
 
 while True:
     try:
         inp = input().rstrip("\n").strip().lower()
     except:
         exit(0)
-    if PrintInputSentence: print("Input:", inp)
-    if inp.startswith("*volume="): #TODO
-        continue
-    if inp.startswith("*prompt"):
-        if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1]))
-        else:
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize))
-        continue
-    if inp.startswith("*memory"):
-        for x in memory.items():
-            print(x)
-        continue
-    if inp.startswith("*buffer"):
-        attention_buf = Memory_attention_buffer(memory, attention_buffer_size)
-        for x in attention_buf:
-            print(x)
-        continue
-    if inp.startswith("//") or inp.startswith("*"):
-        continue
-    if inp.endswith("?"):
-        send_prompt = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp) + inp[:-1] + \
-                                            (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
-        PromptProcess(inp, send_prompt, True)
-    else:
-        if len(inp) > 0 and inp != "1":
-            PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize) + inp + Prompts_belief_end, False)
-        PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_inference_start, "\n", relevantViewSize, recentViewSize) + Prompts_inference_end, False)
-        currentTime += 1
-        Memory_Eternalize(currentTime, memory)
-    Memory_store(filename, memory, currentTime, evidentalBaseID)
+    NarsGPT_AddInput(inp)
