@@ -74,6 +74,8 @@ def NarsGPT_AddInput(inp):
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
             print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1], TimeHandling = TimeHandling)[1])
+        else:
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
         return RET_ANSWER
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if QuestionPriming:
@@ -101,6 +103,10 @@ def NarsGPT_AddInput(inp):
     if inp.startswith("*buffer"):
         if inp.endswith("?"):
             attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1], TimeHandling = TimeHandling)[0]
+            for x in attention_buf:
+                print(x[0], x[1][:-1])
+        else:
+            attention_buf = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
             for x in attention_buf:
                 print(x[0], x[1][:-1])
         return RET_ANSWER
