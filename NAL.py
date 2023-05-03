@@ -65,5 +65,5 @@ def NAL_Revision_And_Choice(truth1, stamp1, truth2, stamp2):
             return truth2, stamp2
 
 def NAL_Projection(premise, conclusionTime):
-    ((term, time), (lastUsed, useCount, TV, stamp)) = premise
+    ((term, time), (lastUsed, useCount, TV, stamp, embedding)) = premise
     return ((term, conclusionTime), (lastUsed, useCount, Truth_Projection(TV, time, conclusionTime), stamp))

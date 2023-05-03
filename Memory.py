@@ -22,57 +22,52 @@
  * THE SOFTWARE.
  * """
 
+from openai.embeddings_utils import get_embedding, cosine_similarity
 from ast import literal_eval
 from os.path import exists
 from NAL import *
 import json
+import time
 
-retrieved_content = []
-def RetrieveQuestionContent(memory, attention_buf, inp, max_LTM_retrievals=5):
-    global retrieved_content
+def get_embedding_robust(inp):
+    while True:
+        try:
+            ret = get_embedding(inp)
+        except:
+            print("//Failed get embedding, will retry API call in 10s")
+            time.sleep(10)
+            continue
+        break
+    return ret
+
+def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
     primed = {}
-    words = [x.strip().replace("?","") for x in inp.split(" ")]
-    for x in words:
-        for m in list(memory.items()):
-            padded = lambda w: " " + w + " "
-            if padded(x) in padded(m[0][0]):
-                if m not in attention_buf:
-                    if m[0] not in primed:
-                        primed[m[0]] = (1, m[1])
-                    else:
-                        primed[m[0]] = (primed[m[0]][0] + 1, primed[m[0]][1])
+    qu_embed = get_embedding_robust(inp)
+    for m in list(memory.items()):
+        if m not in view:
+            matchQuality = cosine_similarity(qu_embed, m[1][4])
+            primed[m[0]] = (matchQuality, m[1])
     primed = list(primed.items())
     primed.sort(key=lambda x: (-x[1][0], -Truth_Expectation(x[1][1][2]))) #sort by query match first then by truth expectation
     primed = primed[:max_LTM_retrievals]
     #for m in primed:
-    #    print("//Retrieved from LTM:", m)
+    #    print("//Retrieved from LTM:", m[0], m[1][:-1])
     primed = [(x[0],x[1][1]) for x in primed]
-    retrieved_content = list(reversed(primed))
+    return list(reversed(primed))
 
-def Memory_attention_buffer(memory, attention_buffer_size, inpQuestion = None):
-    attention_buf=[]
-    relevant_item_list = list(memory.items())
-    #find attention_buffer_size/2 newest items:
-    relevant_item_list.sort(key=lambda x: -x[1][0])
-    attention_buf += reversed(relevant_item_list[0:int(attention_buffer_size/2)]) #newer comes later in prompt
-    #find additional attention_buffer_size/2 useful items which were not already part of the newest
-    relevant_item_list.sort(key=lambda x: -x[1][1])
-    for x in attention_buf:
-        if x in relevant_item_list:
-            relevant_item_list.remove(x) #so we won't select it as it is already part of mem
-    i = 0
-    while len(attention_buf) < attention_buffer_size and i < len(relevant_item_list):
-        attention_buf = [relevant_item_list[i]] + attention_buf
-        i += 1
-    #pull in question content that is not already included
+def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
+    view=[]
+    recent_item_list = list(memory.items())
+    #find recentViewSize items:
+    recent_item_list.sort(key=lambda x: -x[1][0])
+    view += reversed(recent_item_list[0:recentViewSize]) #newer comes later in prompt
     if inpQuestion is not None:
-        RetrieveQuestionContent(memory, attention_buf, inpQuestion)
-    attention_buf = attention_buf + retrieved_content
-    return attention_buf
+        view = RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize) + view
+    return view
 
-def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attention_buffer_size, inpQuestion = None):
+def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None):
     prompt_memory = ""
-    buf = Memory_attention_buffer(memory, attention_buffer_size, inpQuestion)
+    buf = Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
@@ -101,11 +96,11 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, attent
 def Memory_digest_sentence(usedTime, memory, sentence, truth, stamp, taskTime, PrintMemoryUpdates, TimeHandling):
     occurrenceTime = taskTime if TimeHandling else "eternal"
     if (sentence, occurrenceTime) not in memory:
-        memory[(sentence, occurrenceTime)] = (0, 0, (0.5, 0.0), [])
+        memory[(sentence, occurrenceTime)] = (0, 0, (0.5, 0.0), [], get_embedding_robust(sentence))
     if (sentence, occurrenceTime) in memory:
-        lastUsed, useCount, truth_existing, stamp_existing = memory[(sentence, occurrenceTime)]
+        lastUsed, useCount, truth_existing, stamp_existing, embedding = memory[(sentence, occurrenceTime)]
         truth_updated, stamp_updated = NAL_Revision_And_Choice(truth, stamp, truth_existing, stamp_existing)
-        memory[(sentence, occurrenceTime)] = (usedTime if taskTime == "eternal" else taskTime, useCount+1, truth_updated, stamp_updated)
+        memory[(sentence, occurrenceTime)] = (usedTime if taskTime == "eternal" else taskTime, useCount+1, truth_updated, stamp_updated, embedding)
         if PrintMemoryUpdates: print("//UPDATED", sentence, memory[(sentence, occurrenceTime)])
 
 def Memory_load(filename):
@@ -130,7 +125,16 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance = 3):
         belief = memory[(m, t)]
         if t != "eternal" and currentTime - t > eternalizationDistance:
             deletes.append((m, t))
-            additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]), belief[3])))
+            truth_eternalized = Truth_Eternalize(belief[2])
+            if (m, "eternal") in memory:
+                belief_old = memory[(m, "eternal")]
+                previous_lastUsed = belief_old[0]
+                previous_useCount = belief_old[1]
+                truth, stamp = NAL_Revision_And_Choice(truth_eternalized, belief[3], belief_old[2], belief_old[3])
+                additions.append(((m, "eternal"), (max(belief[0], previous_lastUsed), previous_useCount + belief[1], truth, stamp, belief[4])))
+                deletes.append((m, "eternal"))
+            else:
+                additions.append(((m, "eternal"), (belief[0], belief[1], Truth_Eternalize(belief[2]), belief[3], belief[4])))
     for k in deletes:
         del memory[k]
     for (k, v) in additions:

@@ -29,7 +29,9 @@ from Control import *
 import openai
 
 openai.api_key = "YOUR_KEY"
-attention_buffer_size = 20 #how large the system's attention buffer should be
+relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
+recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
+eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
 filename = "mem.json" #the system's memory file
 IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = False or "PrintInputSentence" in sys.argv
@@ -61,9 +63,9 @@ while True:
         continue
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size, inp[:-1].split("*prompt=")[1]))
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1]))
         else:
-            print(Memory_generate_prompt(currentTime, memory, "","", attention_buffer_size))
+            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize))
         continue
     if inp.startswith("*memory"):
         for x in memory.items():
@@ -77,13 +79,13 @@ while True:
     if inp.startswith("//") or inp.startswith("*"):
         continue
     if inp.endswith("?"):
-        send_prompt = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", attention_buffer_size, inp) + inp[:-1] + \
+        send_prompt = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp) + inp[:-1] + \
                                             (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
         PromptProcess(inp, send_prompt, True)
     else:
         if len(inp) > 0 and inp != "1":
-            PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", attention_buffer_size) + inp + Prompts_belief_end, False)
-        PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_inference_start, "\n", attention_buffer_size) + Prompts_inference_end, False)
+            PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize) + inp + Prompts_belief_end, False)
+        PromptProcess(inp, Memory_generate_prompt(currentTime, memory, Prompts_inference_start, "\n", relevantViewSize, recentViewSize) + Prompts_inference_end, False)
         currentTime += 1
         Memory_Eternalize(currentTime, memory)
     Memory_store(filename, memory, currentTime, evidentalBaseID)
