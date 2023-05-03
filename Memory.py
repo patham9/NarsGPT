@@ -342,7 +342,7 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     for (m, t) in memory:
         belief = memory[(m, t)]
         if t != "eternal" and currentTime - t > eternalizationDistance:
-            previous_lastUsed = memory[(m, t)][1]
+            previous_lastUsed = memory[(m, t)][0]
             previous_useCount = memory[(m, t)][1]
             deletes.append((m, t))
             #Get belief truth from ONA
