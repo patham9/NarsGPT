@@ -22,110 +22,98 @@
  * THE SOFTWARE.
  * """
 
-import sys
-from Prompts import *
-from Memory import *
-from Control import *
+from openai.embeddings_utils import get_embedding, cosine_similarity
+from os.path import exists
 import openai
+import json
 import time
+import sys
 
 openai.api_key = "YOUR_KEY"
-relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
-recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
-eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
+relevantViewSize = 30
+recentViewSize = 10
 filename = "mem.json" #the system's memory file
-IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
 PrintInputSentence = True and "NoPrintInputSentence" not in sys.argv
-PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
-PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
 PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
-NarseseByONA = True and "NarseseByGPT" not in sys.argv
-QuestionPriming = True and "NoQuestionPriming" not in sys.argv
-TimeHandling = True and "NoTimeHandling" not in sys.argv
+
+memory = []
+recent = []
+currentTime = 1
+if exists(filename):
+    with open(filename) as json_file:
+        print("//Loaded memory content from", filename)
+        (recent,memory,currentTime) = json.load(json_file)
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-(memory, currentTime, maxBaseId) = Memory_load(filename) #the ONA memory
-NAR.AddInput("*currenttime=" + str(currentTime))
-NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
-def PromptProcess(inp, buf, send_prompt, isQuestion):
-    if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
+def get_embedding_robust(inp):
     while True:
         try:
-            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-            commands = response['choices'][0]['message']['content'].split("\n")
+            ret = get_embedding(inp)
         except:
-            print("Error: API call failed, will try repeating it in 10 seconds!")
-            time.sleep(10) #wait 10 seconds
+            print("//Failed get embedding, will retry API call in 10s")
+            time.sleep(10)
             continue
         break
-    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling), "\n".join(commands)
+    return ret
 
-def NarsGPT_AddInput(inp):
-    global currentTime
+def RetrieveQuestionRelatedBeliefs(inp):
+    global lastRetrieval
+    primed = []
+    qu_embed = get_embedding_robust(inp)
+    for embedding, sentence in memory:
+        if sentence not in recent:
+            matchQuality = cosine_similarity(qu_embed, embedding)
+            primed.append((matchQuality, sentence))
+    primed.sort(key=lambda x: -x[0])
+    primed = primed[:relevantViewSize]
+    primed = [x[1] for x in primed]
+    return list(reversed(primed))
+
+def AddAnswer(answer):
+    global memory, recent
+    memory.append((get_embedding_robust(answer), answer))
+    recent.append(answer)
+    if len(recent) > recentViewSize:
+        recent = recent[1:]
+
+def NarsGPT_AddInput(inp): #use same name as in NarsGPT for easy wrapping in testing
+    global view, currentTime
     RET_ANSWER = ""
-    if PrintInputSentence: print("Input:", inp)
-    if inp.startswith("//"):
+    if len(inp.strip()) == 0:
         return RET_ANSWER
-    if inp.startswith("*volume="): #TODO
-        return RET_ANSWER
+    #start debug command (same behavior as *prompt command in NarsGPT)
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1])[1])
+            relevant = RetrieveQuestionRelatedBeliefs(inp.split("*prompt=")[1])
+            for i,x in enumerate(relevant + recent):
+                print(f"i={i}:", x)
         else:
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
+            for i,x in enumerate(recent):
+                print(f"i={i}:", x)
         return RET_ANSWER
-    if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
-        if QuestionPriming:
-            if inp.endswith("?"): #query first
-                query(currentTime, memory, inp[:-1].strip(), "eternal")
-        ret, currentTime = ProcessInput(currentTime, memory, inp)
-        if "answers" in ret and ret["answers"]:
-            answer = ret["answers"][0]
-            if "truth" not in answer:
-                print("Answer: None.")
-            else:
-                occurrenceTimeInfo = "" if answer["occurrenceTime"] == "eternal" else " t="+answer["occurrenceTime"]
-                print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
-        if not inp.endswith("?"):
-            Memory_Eternalize(currentTime, memory, eternalizationDistance)
-            Memory_store(filename, memory, currentTime)
-        return RET_ANSWER
-    if inp.startswith("*memory"):
-        for x in memory.items():
-            print(x[0], x[1][:-1])
-        return RET_ANSWER
-    if inp.startswith("*time"):
-        print(currentTime)
-        return RET_ANSWER
-    if inp.startswith("*buffer"):
-        if inp.endswith("?"):
-            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1])[0]
-            for x in memory_view:
-                print(x[0], x[1][:-1])
-        else:
-            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
-            for x in memory_view:
-                print(x[0], x[1][:-1])
-        return RET_ANSWER
-    if inp.startswith("*"):
-        NAR.AddInput(inp)
-        return RET_ANSWER
-    inp = inp.lower()
+    #end debug command
+    if PrintInputSentence: print("Input:", inp)
     if inp.endswith("?"):
-        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
-        send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
-        currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
+        relevant = RetrieveQuestionRelatedBeliefs(inp)
+        view = relevant + recent
+        viewstr = ""
+        for i, x in enumerate(view):
+            viewstr += f"\ni={i}: " + x
+        viewstr = viewstr[1:]
+        Prompts_question_end = " according to Memory and which memory item i? Answer in a probabilistic sense and within 15 words based on memory content only."
+        send_prompt = "Memory:\n" + (viewstr if view else "EMPTY!") + "\n The question: " + inp[:-1] +  Prompts_question_end
+        if PrintGPTPrompt: print("vvvv PROMPT\n" + send_prompt + "\n^^^^^")
+        response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+        RET_ANSWER = response['choices'][0]['message']['content']
+        print(RET_ANSWER)
     else:
-        if len(inp) > 0 and not inp.isdigit():
-            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
-            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
-        else:
-            _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
-        Memory_Eternalize(currentTime, memory, eternalizationDistance)
-        Memory_store(filename, memory, currentTime)
+        AddAnswer(inp)
+        currentTime += 1
+        with open(filename, 'w') as f:
+            json.dump((recent,memory,currentTime), f)
     return RET_ANSWER
 
 if __name__ == "__main__":
