@@ -10,3 +10,5 @@ Most obvious benefit: it keeps all the information as the full sentences are sto
 So in question-answering settings where the system should just remember a set of input facts, this baseline might be hard to beat.
 
 TODO: extend it with the text summarization idea, and port over this branch and the others to using Langchain.
+
+Please note: When the LTM is turned on (relevantViewSize > 0) this baseline is better than what is presented in https://www.pinecone.io/learn/langchain-conversational-memory/ due to the prompt size remaining constant while operating on an unbounded LTM storage which allows for Q&A to continue forever without loosing information.
