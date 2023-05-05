@@ -82,7 +82,7 @@ def AddAnswer(answer):
 def NarsGPT_AddInput(inp): #use same name as in NarsGPT for easy wrapping in testing
     global view, currentTime
     RET_ANSWER = ""
-    if len(inp.strip()) == 0:
+    if len(inp.strip()) == 0 or inp.startswith("//"):
         return RET_ANSWER
     #start debug command (same behavior as *prompt command in NarsGPT)
     if inp.startswith("*prompt"):
