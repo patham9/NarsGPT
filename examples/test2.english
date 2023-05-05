@@ -1,0 +1,5 @@
+peter and patrick is a person
+peter did not yell at the dog
+some person yelled at the dog
+who yelled at the dog and who did not?
+//expected: patrick yelled at the dog and peter did not
