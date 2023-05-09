@@ -1,0 +1,39 @@
+*motorbabbling=false
+//background knowledge:
+<{SELF} <-> nars>.
+<((<($1 * #1) --> isin> &/ <(nars * #1) --> isin>) &/ <({SELF} * $1) --> ^pick>) =/> <(nars * $1) --> pick>>.
+<((<(nars * $2) --> isin> &/ <(nars * $1) --> pick>) &/ <({SELF} * $1) --> ^drop>) =/> <($1 * $2) --> isin>>.
+<(<(nars * #1) --> isin> &/ <({SELF} * $1) --> ^go>) =/> <(nars * $1) --> isin>>.
+//all the things nars can pick:
+*ground=<(nars * cat) --> pick>
+//all the places nars can go to:
+*ground=<(nars * kitchen) --> isin>
+*ground=<(nars * bedroom) --> isin>
+
+//t=1 observations:
+<(cat * kitchen) --> isin>. :|:
+<(nars * bedroom) --> isin>. :|:
+
+nars, pick the cat!
+//expected: ^go executed with args kitchen
+
+//t=2 observations:
+<(cat * kitchen) --> isin>. :|:
+<(nars * kitchen) --> isin>. :|:
+
+//continue with the same goal:
+*step
+//expected: ^pick executed with args cat
+
+where is nars most recently?
+//expected: kitchen
+what happened to the cat most recently?
+//expected: the cat was picked up
+what did nars do to the cat most recently?
+//expected: nars picked up the cat
+
+//t=2 observations:
+<(nars * kitchen) --> isin>. :|:
+
+nars, be in the bedroom!
+//^go executed with args bedroom

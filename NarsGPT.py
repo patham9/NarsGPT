@@ -23,6 +23,7 @@
  * """
 
 import sys
+from openai.embeddings_utils import get_embedding, cosine_similarity
 from Prompts import *
 from Memory import *
 from Control import *
@@ -50,7 +51,7 @@ for x in sys.argv:
 NAR.AddInput("*currenttime=" + str(currentTime))
 NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
-def PromptProcess(inp, buf, send_prompt, isQuestion):
+def PromptProcess(inp, buf, send_prompt, isQuestion, isGoal=False):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     while True:
         try:
@@ -61,11 +62,15 @@ def PromptProcess(inp, buf, send_prompt, isQuestion):
             time.sleep(10) #wait 10 seconds
             continue
         break
-    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling), "\n".join(commands)
+    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling), "\n".join(commands)
 
+groundings = []
+lastGoal = ""
 def NarsGPT_AddInput(inp):
-    global currentTime
+    global currentTime, lastGoal
     RET_ANSWER = ""
+    if inp == "*step" and lastGoal != "":
+        inp = lastGoal
     if PrintInputSentence: print("Input:", inp)
     if inp.startswith("//"):
         return RET_ANSWER
@@ -97,6 +102,13 @@ def NarsGPT_AddInput(inp):
         for x in memory.items():
             print(x[0], x[1][:-1])
         return RET_ANSWER
+    if inp.startswith("*ground="):
+        narsese = inp.split("ground=")[1]
+        sentence = Term_AsSentence(narsese)
+        print("//Grounded:", narsese," => ", sentence)
+        embedding = get_embedding_robust(sentence)
+        groundings.append((sentence, embedding))
+        return RET_ANSWER
     if inp.startswith("*time"):
         print(currentTime)
         return RET_ANSWER
@@ -121,7 +133,26 @@ def NarsGPT_AddInput(inp):
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
-            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False)
+            isGoal = inp.endswith("!")
+            if isGoal:
+                lastGoal = inp
+            else:
+                lastGoal = ""
+            if True: #isGoal:
+                inp_embedding = get_embedding_robust(inp)
+                bestQual = 0.0
+                bestsentence = ""
+                for (sentence, embedding) in groundings:
+                    matchQuality = cosine_similarity(inp_embedding, embedding)
+                    if matchQuality > bestQual:
+                        bestsentence = sentence
+                        bestQual = matchQuality
+                if bestsentence == "":
+                    print("//Goal isn't grounded, rejected")
+                    return RET_ANSWER
+                inp = bestsentence
+                print("//Goal got grounded: ", inp)
+            currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False, isGoal)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory, eternalizationDistance)

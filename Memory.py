@@ -198,8 +198,13 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
     ret = NAR.AddInput(inputforNAR, Print=False)
     TestedCausalHypotheses = []
     for execution in ret["executions"]:
-        print(execution, "expectation="+str(ret["reason"]["desire"]), ret["reason"]["hypothesis"])
-        TestedCausalHypotheses.append(ret["reason"]["hypothesis"])
+        reason = ""
+        desire = 0.0
+        if "reason" in ret and ret["reason"] is not None:
+            reason = ret["reason"]["hypothesis"]
+            desire = ret["reason"]["desire"]
+            TestedCausalHypotheses.append(ret["reason"]["hypothesis"])
+        print(execution, "expectation="+str(desire), reason)
     for backup in backups:
         it = ret[backup] + TestedCausalHypotheses if backup == "input" else ret[backup] #append causal hypotheses to be added to memory!
         for derivation in it:
@@ -277,7 +282,7 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv):
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling):
+def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling):
     global lastTime, hadRelation
     #print(">>>>", sentence)
     if currentTime != lastTime:
@@ -286,7 +291,8 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemor
         return False, currentTime
     lastTime = currentTime
     pieces = [x.strip().replace(" ","_") for x in sentence.split(",")]
-    punctuation_tv = f". :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f". {{{truth[0]} {truth[1]}}}"
+    punctuation = "!" if userGoal else "."
+    punctuation_tv = f"{punctuation} :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f"{punctuation} {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
             return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv)

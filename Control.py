@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling):
+def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -51,12 +51,13 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, PrintMemoryU
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested, currentTime = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, PrintMemoryUpdates, TimeHandling) #currentTime updated
+            digested, currentTime = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling) #currentTime updated
             if digested:
                 printsentence = sentence if isInput else x
                 printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
                 if PrintTruthValues:
-                    print(f"{printsentence}. truth={truth}")
+                    punctuation = "!" if userGoal else "."
+                    print(f"{printsentence}{punctuation} truth={truth}")
                 else:
                     print(printsentence)
     if userQuestion and QuestionPriming:
