@@ -105,7 +105,7 @@ def NarsGPT_AddInput(inp):
     if inp.startswith("*ground="):
         narsese = inp.split("ground=")[1]
         sentence = Term_AsSentence(narsese)
-        print("//Grounded:", narsese," => ", sentence)
+        print("//Grounded:", narsese," <= ", sentence)
         embedding = get_embedding_robust(sentence)
         groundings.append((sentence, embedding))
         return RET_ANSWER
@@ -138,7 +138,7 @@ def NarsGPT_AddInput(inp):
                 lastGoal = inp
             else:
                 lastGoal = ""
-            if True: #isGoal:
+            if isGoal:
                 inp_embedding = get_embedding_robust(inp)
                 bestQual = 0.0
                 bestsentence = ""
@@ -151,7 +151,7 @@ def NarsGPT_AddInput(inp):
                     print("//Goal isn't grounded, rejected")
                     return RET_ANSWER
                 inp = bestsentence
-                print("//Goal got grounded: ", inp)
+                print("//Reinterpreted as grounded goal:", inp)
             currentTime, RET_ANSWER = PromptProcess(inp, buf, text + inp + Prompts_belief_end, False, isGoal)
         else:
             _, currentTime = ProcessInput(currentTime, memory, "1" if len(inp) == 0 else inp)

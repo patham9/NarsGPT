@@ -6,16 +6,19 @@
 <(<(nars * #1) --> isin> &/ <({SELF} * $1) --> ^go>) =/> <(nars * $1) --> isin>>.
 //all the things nars can pick:
 *ground=<(nars * cat) --> pick>
-//all the places nars can go to:
+//all the places nars and the cat can be in:
 *ground=<(nars * kitchen) --> isin>
 *ground=<(nars * bedroom) --> isin>
+*ground=<(cat * kitchen) --> isin>
+*ground=<(cat * bedroom) --> isin>
 
 //t=1 observations:
 <(cat * kitchen) --> isin>. :|:
 <(nars * bedroom) --> isin>. :|:
 
-nars, pick the cat!
+nars, the cat should be in the bedroom!
 //expected: ^go executed with args kitchen
+10
 
 //t=2 observations:
 <(cat * kitchen) --> isin>. :|:
@@ -24,6 +27,7 @@ nars, pick the cat!
 //continue with the same goal:
 *step
 //expected: ^pick executed with args cat
+10
 
 where is nars most recently?
 //expected: kitchen
@@ -32,8 +36,17 @@ what happened to the cat most recently?
 what did nars do to the cat most recently?
 //expected: nars picked up the cat
 
-//t=2 observations:
+//t=3 observations:
 <(nars * kitchen) --> isin>. :|:
+<(nars * cat) --> pick>. :|:
 
-nars, be in the bedroom!
-//^go executed with args bedroom
+*step
+//expected: ^go executed with args bedroom
+10
+
+//t=3 observations:
+<(nars * bedroom) --> isin>. :|:
+<(nars * cat) --> pick>. :|:
+
+*step
+//expected: ^drop executed with args cat
