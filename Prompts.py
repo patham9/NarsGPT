@@ -48,4 +48,4 @@ Memory:
 
 Prompts_question_end = " according to Memory and which memory item i? Answer in a probabilistic sense and within 15 words based on memory content only."
 #If it should be allowed to consider GPT's 'weight-based' knowledge too, set IncludeGPTKnowledge=True, then the following is utilized:
-Prompts_question_end_alternative = " and which memory item i? Answer in a probabilistic sense and within 15 words. Make sure to answer with your own beliefs instead of memory contents only if there is no memory item!"
+Prompts_question_end_alternative = " according to Memory and which memory item i? Answer in a probabilistic sense and within 15 words. Make sure to answer with your own beliefs instead of memory contents only if there is no memory item!"
