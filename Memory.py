@@ -96,6 +96,8 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
     return buf, prompt_start + prompt_memory + prompt_end
 
 def Memory_digest_sentence(usedTime, memory, sentence, truth, stamp, taskTime, PrintMemoryUpdates, TimeHandling):
+    if sentence == "":
+        return
     occurrenceTime = taskTime if TimeHandling else "eternal"
     if (sentence, occurrenceTime) not in memory:
         memory[(sentence, occurrenceTime)] = (0, 0, (0.5, 0.0), [], get_embedding_robust(sentence))
