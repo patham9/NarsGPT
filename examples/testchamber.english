@@ -44,7 +44,7 @@ what did nars do to the cat most recently?
 //expected: ^go executed with args bedroom
 10
 
-//t=3 observations:
+//t=4 observations:
 <(nars * bedroom) --> isin>. :|:
 <(nars * cat) --> pick>. :|:
 
