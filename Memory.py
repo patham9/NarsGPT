@@ -117,21 +117,15 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
         if time != "eternal":
             timeterm = "time=" + str(time) + " "
             (f,c) = Truth_Projection((f,c), float(time), float(currentTime))
-        flags = []
-        if c < 0.5:
-            flags.append("hypothetically")
-        else:
-            flags.append("knowingly")
+        truthtype = ""
         if f < 0.3:
-            flags.append("False")
+            truthtype = f"is false"
         elif f > 0.7:
-            flags.append("True")
+            truthtype = f"is true"
         else:
-            flags.append("Contradictory")
-        certainty = Truth_Expectation((f,c))
-        truthtype = '"' + " ".join(flags) + '"'
+            truthtype = "is contradictory"
         term = Term_AsSentence(x[0][0])
-        prompt_memory += f"i={i}: {term}. {timeterm}truthtype={truthtype} certainty={certainty}\n"
+        prompt_memory += f"i={i}: \"{term}\" {truthtype}. {timeterm}confidence={c}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
 lemma = WordNetLemmatizer()
