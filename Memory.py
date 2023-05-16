@@ -117,15 +117,11 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
         if time != "eternal":
             timeterm = "time=" + str(time) + " "
             (f,c) = Truth_Projection((f,c), float(time), float(currentTime))
-        truthtype = ""
-        if f < 0.3:
-            truthtype = f"is false"
-        elif f > 0.7:
-            truthtype = f"is true"
-        else:
-            truthtype = "is contradictory"
         term = Term_AsSentence(x[0][0])
-        prompt_memory += f"i={i}: \"{term}\" {truthtype}. {timeterm}confidence={c}\n"
+        if f < 0.5:
+            words = term.split(" ")
+            term = (words[0] + " not " + " ".join(words[1:])).replace(" not isa ", " is not a ").replace(" isa ", " is a ")
+        prompt_memory += f"i={i}: {term}. {timeterm}confidence={c}\n"
     return buf, prompt_start + prompt_memory + prompt_end
 
 lemma = WordNetLemmatizer()
