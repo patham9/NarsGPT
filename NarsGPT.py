@@ -67,7 +67,7 @@ def PromptProcess(inp, buf, send_prompt, isQuestion, isGoal=False):
 groundings = []
 lastGoal = ""
 def NarsGPT_AddInput(inp):
-    global currentTime, lastGoal
+    global currentTime, lastGoal, memory
     RET_ANSWER = ""
     if inp == "*step" and lastGoal != "":
         inp = lastGoal
@@ -111,6 +111,12 @@ def NarsGPT_AddInput(inp):
         return RET_ANSWER
     if inp.startswith("*time"):
         print(currentTime)
+        return RET_ANSWER
+    if inp.startswith("*reset"):
+        memory = {}
+        currentTime = 1
+        maxBaseId = 1
+        NAR.AddInput("*reset")
         return RET_ANSWER
     if inp.startswith("*buffer"):
         if inp.endswith("?"):
