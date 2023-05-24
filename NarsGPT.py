@@ -35,7 +35,8 @@ relevantViewSize = 30      #how many relevant (judged by statement embedding) ON
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
 eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
 filename = "mem.json" #the system's memory file
-IncludeGPTKnowledge = False or "IncludeGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too
+ConsiderGPTKnowledge = False or "ConsiderGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too for answering a question
+ImportGPTKnowledge = False or "ImportGPTKnowledge" in sys.argv #Whether it should be allowed to encode GPT's knowledge too when receiving new user input
 PrintInputSentence = True and "NoPrintInputSentence" not in sys.argv
 PrintTruthValues = True and "NoPrintTruthValues" not in sys.argv
 PrintMemoryUpdates = False or "PrintMemoryUpdates" in sys.argv
@@ -62,7 +63,7 @@ def PromptProcess(inp, buf, send_prompt, isQuestion, isGoal=False):
             time.sleep(10) #wait 10 seconds
             continue
         break
-    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling), "\n".join(commands)
+    return Control_cycle(inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge), "\n".join(commands)
 
 groundings = []
 lastGoal = ""
@@ -134,7 +135,7 @@ def NarsGPT_AddInput(inp):
     inp = inp.lower()
     if inp.endswith("?"):
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
-        send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if IncludeGPTKnowledge else Prompts_question_end)
+        send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
         currentTime, RET_ANSWER = PromptProcess(inp, buf, send_prompt, True)
     else:
         if len(inp) > 0 and not inp.isdigit():

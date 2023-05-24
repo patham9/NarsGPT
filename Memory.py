@@ -240,9 +240,9 @@ def notIncluded(word, inp):
     return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
 
 relations = set(["isa", "are", "hasproperty"])
-def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
+def Relation(inp, currentTime, memory, s, v, p, punctuation_tv, ImportGPTKnowledge):
     global relations
-    if notIncluded(s, inp) or notIncluded(p, inp):
+    if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -259,8 +259,8 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv):
         _, currentTime = ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
     return True, currentTime
 
-def Property(inp, currentTime, memory, s, p, punctuation_tv):
-    if notIncluded(s, inp) or notIncluded(p, inp):
+def Property(inp, currentTime, memory, s, p, punctuation_tv, ImportGPTKnowledge):
+    if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
     s = Lemmatize(s, wordnet.NOUN)
@@ -272,7 +272,7 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv):
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling):
+def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge):
     global lastTime, hadRelation
     #print(">>>>", sentence)
     if currentTime != lastTime:
@@ -285,9 +285,9 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, 
     punctuation_tv = f"{punctuation} :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f"{punctuation} {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
-            return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv)
+            return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge)
         else:
-            return Relation(inp, currentTime, memory, *pieces, punctuation_tv)
+            return Relation(inp, currentTime, memory, *pieces, punctuation_tv, ImportGPTKnowledge)
     else:
         #print("//!!!! Can't form relation:", pieces)
         return False, currentTime
