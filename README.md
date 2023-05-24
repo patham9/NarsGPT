@@ -4,6 +4,8 @@
 
 A GPT model prompted to build representations for a Non-Axiomatic Reasoning System ([OpenNARS for Applications](https://github.com/opennars/OpenNARS-for-Applications)). This is the first system implementation which uses GPT together with NARS for reasoning on natural language input. This system can learn in a long-term manner while being able to learn and apply new knowledge effectively.
 
+[![NARS-GPT (gptONA)](https://img.youtube.com/vi/l4rklYGbcTo/0.jpg)](https://www.youtube.com/watch?v=l4rklYGbcTo "Integrating GPT and NARS (gptONA)")
+
 **Features:**
 - Natural open-ended Q&A interaction with the user
 - System has no initial knowledge (unless IncludeGPTKnowledge flag is set) but you can simply teach it
