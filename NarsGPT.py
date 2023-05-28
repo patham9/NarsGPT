@@ -80,8 +80,14 @@ def AddAnswer(answer):
         recent = recent[1:]
 
 def NarsGPT_AddInput(inp): #use same name as in NarsGPT for easy wrapping in testing
-    global view, currentTime
+    global view, currentTime, memory, recent
     RET_ANSWER = ""
+    if inp.startswith("*reset"):
+        memory = []
+        recent = []
+        currentTime = 1
+        maxBaseId = 1
+        return RET_ANSWER
     if len(inp.strip()) == 0 or inp.startswith("//"):
         return RET_ANSWER
     #start debug command (same behavior as *prompt command in NarsGPT)
@@ -106,8 +112,15 @@ def NarsGPT_AddInput(inp): #use same name as in NarsGPT for easy wrapping in tes
         Prompts_question_end = " according to Memory and which memory item i? Answer in a probabilistic sense and within 15 words based on memory content only."
         send_prompt = "Memory:\n" + (viewstr if view else "EMPTY!") + "\n The question: " + inp[:-1] +  Prompts_question_end
         if PrintGPTPrompt: print("vvvv PROMPT\n" + send_prompt + "\n^^^^^")
-        response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-        RET_ANSWER = response['choices'][0]['message']['content']
+        while True:
+            try:
+                response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+                RET_ANSWER = response['choices'][0]['message']['content']
+            except:
+                print("Error: API call failed, will try repeating it in 10 seconds!")
+                time.sleep(10) #wait 10 seconds
+                continue
+            break
         print(RET_ANSWER)
     else:
         AddAnswer(inp)
