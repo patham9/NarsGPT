@@ -53,7 +53,7 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, us
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge) #currentTime updated
-            if digested:
+            if digested and GetPrint():
                 printsentence = sentence if isInput else x
                 printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
                 if PrintTruthValues:

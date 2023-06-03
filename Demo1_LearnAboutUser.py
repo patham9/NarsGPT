@@ -7,7 +7,7 @@ lastquestion = ""
 def AddInput(inp):
     if not inp.endswith("?") and not inp.startswith("*") and UseLastQuestionInContext:
         inp = lastquestion + " " + inp
-    ret = NAR.AddInput(inp, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=True)
+    ret = NAR.AddInput(inp, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     if inp.endswith("?"):
         print(ret["GPT_Answer"])
 
@@ -18,8 +18,8 @@ def RaiseQuestion():
     print(ret["GPT_Answer"])
     NAR.I_You_Exchange(ret)
     lastquestion = ret["GPT_Answer"]
-RaiseQuestion()
 
+RaiseQuestion()
 while True:
     try:
         inp = input().rstrip("\n").strip()
