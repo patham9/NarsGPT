@@ -13,7 +13,7 @@ def AddInput(inp):
 
 def RaiseQuestion():
     global lastquestion
-    ret = NAR.AddInput("Raise a question about me, not addressed by any existing memory item?", Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
+    ret = NAR.AddInput(f"Raise a question about {LearnMoreAbout}, not addressed by any existing memory item?", Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     ret["GPT_Answer"] = ret["GPT_Answer"].split("?")[0] + "?"
     print(ret["GPT_Answer"])
     NAR.I_You_Exchange(ret)
