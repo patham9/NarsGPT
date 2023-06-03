@@ -45,10 +45,17 @@ Print = False
 def SetPrint(Flag):
     global Print
     Print = Flag
+def GetPrint():
+    return Print
+
+def ReplaceEncode(word):
+    if word.endswith("encode") and len(word) > 6: #no idea why GPT adds Encode at the end for new words
+            word = word[:-6]
+    return word
 
 def MergeInto(RET_DICT, ret):
     for key in ret:
-        if key in RET_DICT and key is not "reason": #list (only last reason is returned, consistent with NAR.py)
+        if key in RET_DICT and key != "reason": #list (only last reason is returned, consistent with NAR.py)
             RET_DICT[key] = RET_DICT[key] + ret[key]
         else:
             RET_DICT[key] = ret[key]
@@ -139,9 +146,7 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
 lemma = WordNetLemmatizer()
 def Lemmatize(word, tag):
     global used_verbs
-    word = word.lower().replace(" ", "_").replace("-","_")
-    if word.endswith("encode") and len(word) > 6: #no idea why GPT adds Encode at the end for new words
-        word = word[:-6]
+    word = ReplaceEncode(word.lower().replace(" ", "_").replace("-","_"))
     if "_" in word and tag == wordnet.NOUN:
         parts = word.split("_")
         lastpart = lemma.lemmatize(parts[-1], pos = tag).strip().lower().replace(" ","_").replace("-","_")
@@ -251,6 +256,7 @@ def ProcessInput(RET_DICT, currentTime, memory, inputforNAR, backups = ["input",
     return ret, currentTime
 
 def notIncluded(word, inp):
+    word = ReplaceEncode(word)
     return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
 
 relations = set(["isa", "are", "hasproperty"])

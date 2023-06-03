@@ -35,6 +35,7 @@ relevantViewSize = 30      #how many relevant (judged by statement embedding) ON
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
 eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
 filename = "mem.json" #the system's memory file
+IYouExchange = True or "NoIYouExchange" in sys.argv #whether I and you, my and your is exchanged in communication
 ConsiderGPTKnowledge = False or "ConsiderGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too for answering a question
 ImportGPTKnowledge = False or "ImportGPTKnowledge" in sys.argv #Whether it should be allowed to encode GPT's knowledge too when receiving new user input
 PrintInputSentence = True and "NoPrintInputSentence" not in sys.argv
@@ -66,6 +67,15 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False):
     curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
+
+def I_You_Exchange(RET_DICT):
+    if "GPT_Answer" in RET_DICT:
+        answer = (" " + RET_DICT["GPT_Answer"] + " ").replace("\"", " \" ").replace("?", " ?")
+        if " you " in answer or " your " in answer or " You " in answer or " Your " in answer:
+            answer = answer.replace(" you ", " I ").replace(" You ", " I ").replace(" your ", " my ").replace(" Your ", " my ").replace(" yours ", " my ").replace(" Yours ", " my ").strip() #replace you/your with i/my
+        else:
+            answer = answer.replace(" i ", " you ").replace(" I ", " you ").replace(" My ", " your ").replace(" my ", " your ").strip() #replace i/my with you/your
+        RET_DICT["GPT_Answer"] = answer.replace("  \" ", " \"").replace(" \"  ", "\" ").replace(" ?", "?")
 
 groundings = []
 lastGoal = ""
@@ -143,6 +153,7 @@ def AddInput(inp, Print=True, PrintInputSentenceOverride=True, PrintInputSentenc
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
         currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True)
+        I_You_Exchange(RET_DICT)
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)

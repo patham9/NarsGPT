@@ -40,7 +40,8 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, us
         truth = (1.0, 0.9)
         systemQuestion = x.startswith("Question(")
         if userQuestion or systemQuestion:
-            print(x)
+            if GetPrint():
+                print(x)
         isNegated = False
         if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
             isNegated = True
