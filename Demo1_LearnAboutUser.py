@@ -1,9 +1,11 @@
 import NarsGPT as NAR
 
-UseLastQuestion = True
+LearnMoreAbout = "me" #"the router"
+UseLastQuestionInContext = True
+
 lastquestion = ""
 def AddInput(inp):
-    if not inp.endswith("?") and not inp.startswith("*") and UseLastQuestion:
+    if not inp.endswith("?") and not inp.startswith("*") and UseLastQuestionInContext:
         inp = lastquestion + " " + inp
     ret = NAR.AddInput(inp, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=True)
     if inp.endswith("?"):
