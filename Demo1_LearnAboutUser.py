@@ -5,10 +5,10 @@ def AddInput(inp):
     if inp.endswith("?"):
         print(ret["GPT_Answer"])
 
-def question():
+def RaiseQuestion():
     ret = NAR.AddInput("Raise a question about me, not addressed by any existing memory item?", Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     print(ret["GPT_Answer"].split("?")[0] + "?")
-question()
+RaiseQuestion()
 
 while True:
     try:
@@ -16,4 +16,4 @@ while True:
     except:
         exit(0)
     AddInput(inp)
-    question()
+    RaiseQuestion()
