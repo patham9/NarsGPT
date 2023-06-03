@@ -37,8 +37,8 @@ ExampleID = 1
 for example in examples:
     BeliefInput, QuestionInput, expectedOutput = example
     expectedOutput = expectedOutput.strip()
-    outputFromBeliefInput = NarsGPT_AddInput(BeliefInput)
-    actualOutput = NarsGPT_AddInput(QuestionInput)
+    outputFromBeliefInput = AddInput(BeliefInput, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=True)["GPT_Answer"]
+    actualOutput = AddInput(QuestionInput, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=True)["GPT_Answer"]
     Dic = {"ExampleID": ExampleID, "Input": BeliefInput + " " + QuestionInput, "OutputFromBeliefInput": outputFromBeliefInput,"actualOutput": actualOutput, "expectedOutput": expectedOutput}
     Line_Input_Output_ExpectedOutput.append(Dic)
     for k in Dic:
@@ -48,6 +48,6 @@ for example in examples:
     with open(filename, 'w') as f:
         json.dump(Line_Input_Output_ExpectedOutput, f)
     ExampleID += 1
-    NarsGPT_AddInput("*reset")
+    AddInput("*reset")
 
 

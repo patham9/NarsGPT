@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge):
+def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -40,7 +40,8 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, userGoal, Pr
         truth = (1.0, 0.9)
         systemQuestion = x.startswith("Question(")
         if userQuestion or systemQuestion:
-            print(x)
+            if GetPrint():
+                print(x)
         isNegated = False
         if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
             isNegated = True
@@ -51,7 +52,7 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, userGoal, Pr
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested, currentTime = Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge) #currentTime updated
+            digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge) #currentTime updated
             if digested:
                 printsentence = sentence if isInput else x
                 printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
@@ -61,5 +62,5 @@ def Control_cycle(inp, buf, currentTime, memory, cmd, userQuestion, userGoal, Pr
                 else:
                     print(printsentence)
     if userQuestion and QuestionPriming:
-        Memory_QuestionPriming(currentTime, "\n".join(cmd), memory, buf)
+        Memory_QuestionPriming(RET_DICT, currentTime, "\n".join(cmd), memory, buf)
     return currentTime

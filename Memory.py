@@ -41,6 +41,25 @@ from nltk.corpus import wordnet
 nltk.download('wordnet', quiet=True)
 nltk.download('omw-1.4', quiet=True)
 
+Print = False
+def SetPrint(Flag):
+    global Print
+    Print = Flag
+def GetPrint():
+    return Print
+
+def ReplaceEncode(word):
+    if word.endswith("encode") and len(word) > 6: #no idea why GPT adds Encode at the end for new words
+            word = word[:-6]
+    return word
+
+def MergeInto(RET_DICT, ret):
+    for key in ret:
+        if key in RET_DICT and key != "reason": #list (only last reason is returned, consistent with NAR.py)
+            RET_DICT[key] = RET_DICT[key] + ret[key]
+        else:
+            RET_DICT[key] = ret[key]
+
 def get_embedding_robust(inp):
     while True:
         try:
@@ -127,9 +146,7 @@ def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, releva
 lemma = WordNetLemmatizer()
 def Lemmatize(word, tag):
     global used_verbs
-    word = word.lower().replace(" ", "_").replace("-","_")
-    if word.endswith("encode") and len(word) > 6: #no idea why GPT adds Encode at the end for new words
-        word = word[:-6]
+    word = ReplaceEncode(word.lower().replace(" ", "_").replace("-","_"))
     if "_" in word and tag == wordnet.NOUN:
         parts = word.split("_")
         lastpart = lemma.lemmatize(parts[-1], pos = tag).strip().lower().replace(" ","_").replace("-","_")
@@ -142,27 +159,28 @@ def Lemmatize(word, tag):
     return ret
 
 retrieved = set([])
-def Allow_requery_if_not_in_ONA(term, time):
+def Allow_requery_if_not_in_ONA(RET_DICT, term, time):
     #check if previously queried item is not in ONA memory anymore else we need
     #to set it up for re-query by removing it from retrieved
     if (term, time) in retrieved:
-        ret = NAR.AddInput(term + "?", Print=False)
+        ret = NAR.AddInput(term + "?", Print=Print)
+        MergeInto(RET_DICT, ret)
         if "answers" in ret and ret["answers"]:
             answer = ret["answers"][0]
             if "truth" not in answer and answer["term"] == "None":
                 retrieved.remove(term, time)
 
-def query(currentTime, memory, term, time):
+def query(RET_DICT, currentTime, memory, term, time):
     global retrieved
     if time != "eternal":
         return currentTime
-    Allow_requery_if_not_in_ONA(term, time)
+    Allow_requery_if_not_in_ONA(RET_DICT, term, time)
     if (term, time) not in retrieved and (term, time) in memory:
         retrieved.add((term, time))
         (_, _, (f, c), stamp, _) = memory[(term, time)]
-        NAR.AddInput("*stampimport=" + str(stamp), Print=False)
+        NAR.AddInput("*stampimport=" + str(stamp), Print=Print)
         if time == "eternal":
-            _, currentTime = ProcessInput(currentTime, memory, f"{term}. {{{f} {c}}}")
+            _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"{term}. {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
         bestTerm, bestTruth, bestTime, bestStamp = (None, (0.0, 0.5), "eternal", [])
@@ -178,14 +196,15 @@ def query(currentTime, memory, term, time):
             Allow_requery_if_not_in_ONA(bestTerm, time)
         if bestTerm is not None and (bestTerm, bestTime) not in retrieved:
             retrieved.add((bestTerm, bestTime))
-            NAR.AddInput("*stampimport=" + str(bestStamp), Print=False)
+            NAR.AddInput("*stampimport=" + str(bestStamp), Print=Print)
             if bestTime == "eternal":
-                _, currentTime = ProcessInput(currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
+                _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
     retrieved.add((term, time))
     return currentTime
 
-def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
-    ret = NAR.AddInput(inputforNAR, Print=False)
+def ProcessInput(RET_DICT, currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
+    ret = NAR.AddInput(inputforNAR, Print=Print)
+    MergeInto(RET_DICT, ret)
     TestedCausalHypotheses = []
     for execution in ret["executions"]:
         reason = ""
@@ -214,7 +233,7 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
                 stamp = derivation["Stamp"]
                 if str(time).isdigit():
                     time = int(time)
-                currentTime = query(currentTime, memory, term, time)
+                currentTime = query(RET_DICT, currentTime, memory, term, time)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
@@ -237,10 +256,11 @@ def ProcessInput(currentTime, memory, inputforNAR, backups = ["input", "answers"
     return ret, currentTime
 
 def notIncluded(word, inp):
+    word = ReplaceEncode(word)
     return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
 
 relations = set(["isa", "are", "hasproperty"])
-def Relation(inp, currentTime, memory, s, v, p, punctuation_tv, ImportGPTKnowledge):
+def Relation(RET_DICT, inp, currentTime, memory, s, v, p, punctuation_tv, ImportGPTKnowledge):
     global relations
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
@@ -254,12 +274,12 @@ def Relation(inp, currentTime, memory, s, v, p, punctuation_tv, ImportGPTKnowled
     if v == "isa" or v == "are":
         if s == p:
             return False, currentTime
-        _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
+        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
     else:
-        _, currentTime = ProcessInput(currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
+        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
     return True, currentTime
 
-def Property(inp, currentTime, memory, s, p, punctuation_tv, ImportGPTKnowledge):
+def Property(RET_DICT, inp, currentTime, memory, s, p, punctuation_tv, ImportGPTKnowledge):
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
@@ -267,12 +287,12 @@ def Property(inp, currentTime, memory, s, p, punctuation_tv, ImportGPTKnowledge)
     p = Lemmatize(p, wordnet.ADJ)
     if s == "" or p == "" or s == p:
         return False, currentTime
-    _, currentTime = ProcessInput(currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
+    _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
     return True, currentTime
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge):
+def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge):
     global lastTime, hadRelation
     #print(">>>>", sentence)
     if currentTime != lastTime:
@@ -285,9 +305,9 @@ def Memory_digest_sentence(inp, currentTime, memory, sentence, truth, userGoal, 
     punctuation_tv = f"{punctuation} :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f"{punctuation} {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
-            return Property(inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge)
+            return Property(RET_DICT, inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge)
         else:
-            return Relation(inp, currentTime, memory, *pieces, punctuation_tv, ImportGPTKnowledge)
+            return Relation(RET_DICT, inp, currentTime, memory, *pieces, punctuation_tv, ImportGPTKnowledge)
     else:
         #print("//!!!! Can't form relation:", pieces)
         return False, currentTime
@@ -309,7 +329,7 @@ def Memory_store(filename, memory, currentTime):
     with open(filename, 'w') as f:
         json.dump(({str(k): v for k, v in memory.items()}, currentTime), f)
 
-def Memory_QuestionPriming(currentTime, cmd, memory, buf):
+def Memory_QuestionPriming(RET_DICT, currentTime, cmd, memory, buf):
     #1. get all memory index references
     indexrefs = [x+" " for x in cmd.replace("i=", "item ").split("item ")]
     indices=[]
@@ -330,7 +350,7 @@ def Memory_QuestionPriming(currentTime, cmd, memory, buf):
     for index in indices:
         if index >= 0 and index < len(buf):
             item = buf[index]
-            query(currentTime, memory, item[0][0], item[0][1])
+            query(RET_DICT, currentTime, memory, item[0][0], item[0][1])
             
 def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     deletes = []
@@ -346,7 +366,7 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
                 previous_useCount = belief_old[1]
             deletes.append((m, t))
             #Get belief truth from ONA
-            answers = NAR.AddInput(m + "?", Print=False)["answers"]
+            answers = NAR.AddInput(m + "?", Print=Print)["answers"]
             if answers and "truth" in answers[0]:
                 f,c = float(answers[0]["truth"]["frequency"]), float(answers[0]["truth"]["confidence"])
                 stamp = answers[0]["Stamp"]

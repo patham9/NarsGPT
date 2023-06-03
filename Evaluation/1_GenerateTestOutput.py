@@ -21,7 +21,7 @@ while True:
     if expectedOutput != "":
         if not Input.endswith("?"):
             Input += "?"
-    actualOutput = NarsGPT_AddInput(Input)
+    actualOutput = AddInput(Input, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=True)["GPT_Answer"]
     Dic = {"Line": Line, "Input": Input, "actualOutput": actualOutput, "expectedOutput": expectedOutput}
     Line_Input_Output_ExpectedOutput.append(Dic)
     for k in Dic:
