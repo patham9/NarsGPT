@@ -7,13 +7,13 @@ lastquestion = ""
 def AddInput(inp):
     if not inp.endswith("?") and not inp.startswith("*") and UseLastQuestionInContext:
         inp = lastquestion + " " + inp
-    ret = NAR.AddInput(inp, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
+    ret = NAR.AddInput(inp, PrintAnswer=False, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     if inp.endswith("?"):
         print(ret["GPT_Answer"])
 
 def RaiseQuestion():
     global lastquestion
-    ret = NAR.AddInput(f"Raise a question about {LearnMoreAbout}, not addressed by any existing memory item?", Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
+    ret = NAR.AddInput(f"Raise a question about {LearnMoreAbout}, not addressed by any existing memory item?", PrintAnswer=False, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     ret["GPT_Answer"] = ret["GPT_Answer"].split("?")[0] + "?"
     print(ret["GPT_Answer"])
     NAR.I_You_Exchange(ret)

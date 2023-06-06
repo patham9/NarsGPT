@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge):
+def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -40,7 +40,7 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, us
         truth = (1.0, 0.9)
         systemQuestion = x.startswith("Question(")
         if userQuestion or systemQuestion:
-            if GetPrint():
+            if PrintAnswer:
                 print(x)
         isNegated = False
         if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
@@ -53,7 +53,7 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, us
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
             digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge) #currentTime updated
-            if digested and GetPrint():
+            if digested and PrintAnswer:
                 printsentence = sentence if isInput else x
                 printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
                 if PrintTruthValues:

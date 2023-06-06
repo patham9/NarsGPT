@@ -53,7 +53,7 @@ for x in sys.argv:
 NAR.AddInput("*currenttime=" + str(currentTime))
 NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
-def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False):
+def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, PrintAnswer=False):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     while True:
         try:
@@ -64,7 +64,7 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False):
             time.sleep(10) #wait 10 seconds
             continue
         break
-    curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge)
+    curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
 
@@ -79,7 +79,7 @@ def I_You_Exchange(RET_DICT):
 
 groundings = []
 lastGoal = ""
-def AddInput(inp, Print=True, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False):
+def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False):
     global currentTime, lastGoal, memory, PrintInputSentence
     SetPrint(Print)
     if PrintInputSentenceOverride:
@@ -152,7 +152,7 @@ def AddInput(inp, Print=True, PrintInputSentenceOverride=True, PrintInputSentenc
     if inp.endswith("?"):
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
-        currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True)
+        currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True, PrintAnswer=PrintAnswer)
         I_You_Exchange(RET_DICT)
     else:
         if len(inp) > 0 and not inp.isdigit():
@@ -176,7 +176,7 @@ def AddInput(inp, Print=True, PrintInputSentenceOverride=True, PrintInputSentenc
                     return RET_DICT
                 inp = bestsentence
                 print("//Reinterpreted as grounded goal:", inp)
-            currentTime = PromptProcess(RET_DICT, inp, buf, text + inp + Prompts_belief_end, False, isGoal)
+            currentTime = PromptProcess(RET_DICT, inp, buf, text + inp + Prompts_belief_end, False, isGoal, PrintAnswer=PrintAnswer)
         else:
             _, currentTime = ProcessInput(RET_DICT, currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory, eternalizationDistance)
@@ -202,7 +202,7 @@ def Shell():
             inp = input().rstrip("\n").strip()
         except:
             exit(0)
-        AddInput(inp, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=PrintInputSentence)
+        AddInput(inp, PrintAnswer=True, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=PrintInputSentence)
 
 if __name__ == "__main__":
     Shell()
