@@ -2,7 +2,7 @@
 
 <img src="https://user-images.githubusercontent.com/8284677/234757994-5e8ad001-c5b1-4aa1-abe7-c56a4f7012dd.png" width="200px">
 
-A GPT model prompted to build representations for a Non-Axiomatic Reasoning System ([OpenNARS for Applications](https://github.com/opennars/OpenNARS-for-Applications)). This is the first system implementation which uses GPT together with NARS for reasoning on natural language input. This system can learn in a long-term manner while being able to learn and apply new knowledge effectively.
+A GPT model as a language channel to build representations for a Non-Axiomatic Reasoning System ([OpenNARS for Applications](https://github.com/opennars/OpenNARS-for-Applications)). This is the first system implementation which uses GPT together with NARS for reasoning on natural language input. This system can learn in a long-term manner while being able to learn and apply new knowledge effectively.
 
 [![NARS-GPT](https://img.youtube.com/vi/l4rklYGbcTo/0.jpg)](https://www.youtube.com/watch?v=l4rklYGbcTo "Integrating GPT and NARS (gptONA)")
 
