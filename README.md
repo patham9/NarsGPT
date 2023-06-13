@@ -1,10 +1,10 @@
-# gptONA (for [NarsGPT](https://github.com/patham9/NarsGPT) click here)
+# NARS-GPT
 
 <img src="https://user-images.githubusercontent.com/8284677/234757994-5e8ad001-c5b1-4aa1-abe7-c56a4f7012dd.png" width="200px">
 
 A GPT model prompted to build representations for a Non-Axiomatic Reasoning System ([OpenNARS for Applications](https://github.com/opennars/OpenNARS-for-Applications)). This is the first system implementation which uses GPT together with NARS for reasoning on natural language input. This system can learn in a long-term manner while being able to learn and apply new knowledge effectively.
 
-[![NARS-GPT (gptONA)](https://img.youtube.com/vi/l4rklYGbcTo/0.jpg)](https://www.youtube.com/watch?v=l4rklYGbcTo "Integrating GPT and NARS (gptONA)")
+[![NARS-GPT](https://img.youtube.com/vi/l4rklYGbcTo/0.jpg)](https://www.youtube.com/watch?v=l4rklYGbcTo "Integrating GPT and NARS (gptONA)")
 
 **Features:**
 - Natural open-ended Q&A interaction with the user
@@ -32,9 +32,7 @@ A GPT model prompted to build representations for a Non-Axiomatic Reasoning Syst
 
 **Compared to implementing a NARS via GPT:**
 
-- Compared to NarsGPT (which is less equally capable in terms of incremental Q&A) this project translates language into the Narsese formal language via GPT and uses ONA for reasoning. This guarantees that conclusions are supported by the evidence and never faulty, and that representations are not ambiguous or redundant which makes belief revision easier when new evidence about a specific relation is presented to the system. Also this system can process Narsese events (dozens of events per second) in addition to the slow English input, so is more suitable for sensorimotor purposes than NarsGPT. However we believe both projects represent two key alternative directions on the crossroads to AGI and are hence explored in parallel in this 2-branched repository.
-
-![Project Venn Diagram](https://user-images.githubusercontent.com/8284677/234832807-f26aaa18-afb9-4f6e-91ea-c667b74f1a5d.png)
+- This project translates language into the Narsese formal language via GPT and uses ONA for reasoning. This guarantees that conclusions are supported by the evidence and never faulty, and that representations are not ambiguous or redundant which makes belief revision easier when new evidence about a specific relation is presented to the system. Also this system can process Narsese events (dozens of events per second) in addition to the slow English input, which allows NARS sensorimotor capabilities to be utilized.
 
 **Already supported:**
 - NARS-style declarative inference and question answering with long-term memory storage
