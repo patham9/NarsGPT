@@ -53,6 +53,15 @@ for x in sys.argv:
 NAR.AddInput("*currenttime=" + str(currentTime))
 NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
+
+def I_You_Exchange(answer):
+    answer = (" " + answer + " ").replace("\"", " \" ").replace("?", " ?")
+    if " you " in answer or " your " in answer or " You " in answer or " Your " in answer:
+        answer = answer.replace(" you ", " I ").replace(" You ", " I ").replace(" your ", " my ").replace(" Your ", " my ").replace(" yours ", " my ").replace(" Yours ", " my ").strip() #replace you/your with i/my
+    else:
+        answer = answer.replace(" i ", " you ").replace(" I ", " you ").replace(" My ", " your ").replace(" my ", " your ").strip() #replace i/my with you/your
+    return answer.replace("  \" ", " \"").replace(" \"  ", "\" ").replace(" ?", "?")
+
 def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, PrintAnswer=False):
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     while True:
@@ -64,18 +73,11 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
             time.sleep(10) #wait 10 seconds
             continue
         break
+    if isQuestion:
+        commands = I_You_Exchange("\n".join(commands)).split("\n")
     curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
-
-def I_You_Exchange(RET_DICT):
-    if "GPT_Answer" in RET_DICT:
-        answer = (" " + RET_DICT["GPT_Answer"] + " ").replace("\"", " \" ").replace("?", " ?")
-        if " you " in answer or " your " in answer or " You " in answer or " Your " in answer:
-            answer = answer.replace(" you ", " I ").replace(" You ", " I ").replace(" your ", " my ").replace(" Your ", " my ").replace(" yours ", " my ").replace(" Yours ", " my ").strip() #replace you/your with i/my
-        else:
-            answer = answer.replace(" i ", " you ").replace(" I ", " you ").replace(" My ", " your ").replace(" my ", " your ").strip() #replace i/my with you/your
-        RET_DICT["GPT_Answer"] = answer.replace("  \" ", " \"").replace(" \"  ", "\" ").replace(" ?", "?")
 
 groundings = []
 lastGoal = ""
@@ -153,7 +155,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
         currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True, PrintAnswer=PrintAnswer)
-        I_You_Exchange(RET_DICT)
+        answer=RET_DICT["GPT_Answer"]; os.system(f"echo -n \"{answer}\" | gtts-cli - | ffplay -loglevel quiet -autoexit -nodisp -");
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
