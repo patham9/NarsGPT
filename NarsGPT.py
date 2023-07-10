@@ -55,11 +55,13 @@ NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
 
 def I_You_Exchange(answer):
+    if not IYouExchange:
+        return answer
     answer = (" " + answer + " ").replace("\"", " \" ").replace("?", " ?")
     if " you " in answer or " your " in answer or " You " in answer or " Your " in answer:
-        answer = answer.replace(" you ", " I ").replace(" You ", " I ").replace(" your ", " my ").replace(" Your ", " my ").replace(" yours ", " my ").replace(" Yours ", " my ").strip() #replace you/your with i/my
+        answer = answer.replace(" you are ", " I am ").replace(" You are ", " I am ").replace(" you ", " I ").replace(" You ", " I ").strip() #replace you/your with i/my
     else:
-        answer = answer.replace(" i ", " you ").replace(" I ", " you ").replace(" My ", " your ").replace(" my ", " your ").strip() #replace i/my with you/your
+        answer = answer.replace(" i am ", " you are ").replace(" I am ", " you are ").replace(" i ", " you ").replace(" I ", " you ").strip() #replace i/my with you/your
     return answer.replace("  \" ", " \"").replace(" \"  ", "\" ").replace(" ?", "?")
 
 def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, PrintAnswer=False):
@@ -155,7 +157,6 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
         currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True, PrintAnswer=PrintAnswer)
-        answer=RET_DICT["GPT_Answer"]; os.system(f"echo -n \"{answer}\" | gtts-cli - | ffplay -loglevel quiet -autoexit -nodisp -");
     else:
         if len(inp) > 0 and not inp.isdigit():
             buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
