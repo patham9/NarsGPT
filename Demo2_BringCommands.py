@@ -36,18 +36,39 @@ def parseOutput(LM_output):
         if not LM_output.endswith("?"):
             print("ERROR: NOT VALID QUESTION: ", LM_output)
             exit(0)
-        return NAR.AddInput(LM_output, PrintAnswer=False, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)["GPT_Answer"]
+        return NAR.AddInput(LM_output, PrintAnswer=False, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False)
     return None
 
-task = input()
-while True:
-    LM_output = query(task).strip()
-    NARS_output = parseOutput(LM_output)
-    print(LM_output, NARS_output, "\n")
-    if NARS_output is not None:
-        RECENT_QA_TUPLES.append((LM_output, NARS_output))
+def AddInput(task):
+    global RECENT_QA_TUPLES
+    RECENT_QA_TUPLES = []
+    if task.endswith("!"):
+        while True:
+            LM_output = query(task).strip()
+            ret = parseOutput(LM_output)
+            if ret is None:
+                #translate LM_output into a Narsese goal, and enter it, returning ONA output
+                LM_output = LM_output.lower()
+                if LM_output.startswith("bring("):
+                    args = [x.strip() for x in LM_output.split("bring(")[1].split(")")[0].split(",")]
+                    for x in args:
+                        if " " in x or "=" in x:
+                            print("//GOAL not properly grounded")
+                            return None
+                    goal = f"<({args[0]} * ({args[1]} * {args[2]})) --> bring>! :|:"
+                    print("//GOAL:", goal)
+                    return NAR.AddInput(goal, Print=False)
+                return None
+            NARS_output = ret["GPT_Answer"]
+            print(LM_output, NARS_output, "\n")
+            RECENT_QA_TUPLES.append((LM_output, NARS_output))
     else:
-        break
-    
+        return NAR.AddInput(task, Print=False)
 
-    
+def Shell():
+    while True:
+        task = input()
+        AddInput(task)
+
+if __name__ == "__main__":
+    Shell()
