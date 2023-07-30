@@ -169,7 +169,7 @@ def Atomize(atom, atoms, pos, atomCreationThreshold):
         if pos2 == pos:
             embedding = atoms[key2]
             matchQuality = cosine_similarity(atomembedding, embedding)
-            print("!!!", atom2, atom, matchQuality)
+            #print("!!!", atom2, atom, matchQuality)
             if closest_atom is None or matchQuality > closest_quality:
                 closest_atom = atom2
                 closest_quality = matchQuality
@@ -177,7 +177,7 @@ def Atomize(atom, atoms, pos, atomCreationThreshold):
         ret = atom
         atoms[key] = atomembedding
     else:
-        print(f"REPLACED {atom} with {closest_atom} matchVal={matchQuality}")
+        #print(f"REPLACED {atom} with {closest_atom} matchVal={matchQuality}")
         ret = closest_atom
     return ret
 
