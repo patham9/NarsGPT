@@ -158,6 +158,29 @@ def Lemmatize(word, tag):
                 return "isa"
     return ret
 
+def Atomize(atom, atoms, pos, atomCreationThreshold):
+    splitter = ";;"
+    key = atom + splitter + str(pos)
+    atomembedding = atoms[key] if key in atoms else get_embedding_robust(atom)
+    closest_atom = None
+    closest_quality = None
+    for key2 in atoms:
+        atom2, pos2 = key2.split(splitter)
+        if pos2 == pos:
+            embedding = atoms[key2]
+            matchQuality = cosine_similarity(atomembedding, embedding)
+            print("!!!", atom2, atom, matchQuality)
+            if closest_atom is None or matchQuality > closest_quality:
+                closest_atom = atom2
+                closest_quality = matchQuality
+    if closest_quality is None or closest_quality < atomCreationThreshold:
+        ret = atom
+        atoms[key] = atomembedding
+    else:
+        print(f"REPLACED {atom} with {closest_atom} matchVal={matchQuality}")
+        ret = closest_atom
+    return ret
+
 retrieved = set([])
 def Allow_requery_if_not_in_ONA(RET_DICT, term, time):
     #check if previously queried item is not in ONA memory anymore else we need
@@ -260,14 +283,14 @@ def notIncluded(word, inp):
     return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
 
 relations = set(["isa", "are", "hasproperty"])
-def Relation(RET_DICT, inp, currentTime, memory, s, v, p, punctuation_tv, ImportGPTKnowledge):
+def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
     global relations
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
-    s = Lemmatize(s, wordnet.NOUN)
-    p = Lemmatize(p, wordnet.NOUN)
-    v = Lemmatize(v, wordnet.VERB)
+    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
+    p = Atomize(Lemmatize(p, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
+    v = Atomize(Lemmatize(v, wordnet.VERB), atoms, wordnet.VERB, atomCreationThreshold)
     relations.add(v)
     if s == "" or v == "" or p == "":
         return False, currentTime
@@ -279,12 +302,12 @@ def Relation(RET_DICT, inp, currentTime, memory, s, v, p, punctuation_tv, Import
         _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
     return True, currentTime
 
-def Property(RET_DICT, inp, currentTime, memory, s, p, punctuation_tv, ImportGPTKnowledge):
+def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
-    s = Lemmatize(s, wordnet.NOUN)
-    p = Lemmatize(p, wordnet.ADJ)
+    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
+    p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, wordnet.ADJ, atomCreationThreshold)
     if s == "" or p == "" or s == p:
         return False, currentTime
     _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
@@ -292,7 +315,7 @@ def Property(RET_DICT, inp, currentTime, memory, s, p, punctuation_tv, ImportGPT
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge):
+def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
     global lastTime, hadRelation
     #print(">>>>", sentence)
     if currentTime != lastTime:
@@ -305,29 +328,37 @@ def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, 
     punctuation_tv = f"{punctuation} :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f"{punctuation} {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
-            return Property(RET_DICT, inp, currentTime, memory, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge)
+            return Property(RET_DICT, inp, currentTime, memory, atoms, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
         else:
-            return Relation(RET_DICT, inp, currentTime, memory, *pieces, punctuation_tv, ImportGPTKnowledge)
+            return Relation(RET_DICT, inp, currentTime, memory, atoms, *pieces, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
     else:
         #print("//!!!! Can't form relation:", pieces)
         return False, currentTime
 
 def Memory_load(filename):
     memory = {} #the NARS-style long-term memory
+    atoms = dict({}) #atom to embedding mapping
     currentTime = 1
     if exists(filename):
         with open(filename) as json_file:
             print("//Loaded memory content from", filename)
             (mt, currentTime) = json.load(json_file)
             memory = {literal_eval(k): v for k, v in mt.items()}
+        atomfile = filename.replace(".json", "_atoms.json")
+        with open(atomfile) as json_file:
+            print("//Loaded atoms with embeddings from", filename)
+            atoms = json.load(json_file)
     maxBaseId = 0
     for key in memory:
         maxBaseId = max([maxBaseId] + memory[key][3])
-    return (memory, currentTime, maxBaseId)
+    return (memory, atoms, currentTime, maxBaseId)
 
-def Memory_store(filename, memory, currentTime):
+def Memory_store(filename, memory, atoms, currentTime):
     with open(filename, 'w') as f:
         json.dump(({str(k): v for k, v in memory.items()}, currentTime), f)
+    atomfile = filename.replace(".json", "_atoms.json")
+    with open(atomfile, 'w') as f:
+        json.dump(atoms, f)
 
 def Memory_QuestionPriming(RET_DICT, currentTime, cmd, memory, buf):
     #1. get all memory index references

@@ -24,7 +24,7 @@
 
 from Memory import *
 
-def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge):
+def Control_cycle(RET_DICT, inp, buf, currentTime, memory, atoms, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -52,7 +52,7 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, cmd, userQuestion, us
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge) #currentTime updated
+            digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
             if digested and PrintAnswer:
                 printsentence = sentence if isInput else x
                 printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")

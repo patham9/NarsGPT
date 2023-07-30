@@ -34,6 +34,7 @@ openai.api_key = "YOUR_KEY"
 relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
 eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
+atomCreationThreshold = 0.88 #how different a new word needs to be to existing of same type to become a new atom
 filename = "mem.json" #the system's memory file
 IYouExchange = True or "NoIYouExchange" in sys.argv #whether I and you, my and your is exchanged in communication
 ConsiderGPTKnowledge = False or "ConsiderGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too for answering a question
@@ -49,7 +50,7 @@ TimeHandling = True and "NoTimeHandling" not in sys.argv
 for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
-(memory, currentTime, maxBaseId) = Memory_load(filename) #the ONA memory
+(memory, atoms, currentTime, maxBaseId) = Memory_load(filename) #the ONA memory
 NAR.AddInput("*currenttime=" + str(currentTime))
 NAR.AddInput("*stampid=" + str(maxBaseId + 1))
 
@@ -77,14 +78,14 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
         break
     if isQuestion:
         commands = I_You_Exchange("\n".join(commands)).split("\n")
-    curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge)
+    curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, atoms, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
 
 groundings = []
 lastGoal = ""
 def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False):
-    global currentTime, lastGoal, memory, PrintInputSentence
+    global currentTime, lastGoal, memory, atoms, PrintInputSentence
     SetPrint(Print)
     if PrintInputSentenceOverride:
         PrintInputSentence = PrintInputSentenceOverrideValue
@@ -135,6 +136,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         return RET_DICT
     if inp.startswith("*reset"):
         memory = {}
+        atoms = {}
         currentTime = 1
         maxBaseId = 1
         NAR.AddInput("*reset")
@@ -183,7 +185,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         else:
             _, currentTime = ProcessInput(RET_DICT, currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory, eternalizationDistance)
-        Memory_store(filename, memory, currentTime)
+        Memory_store(filename, memory, atoms, currentTime)
     return RET_DICT
 
 def getNAR():
