@@ -94,7 +94,7 @@ def Term_AsSentence(T):
                 op = removeParentheses(prec_op[-1].split(" --> ")[1] + " " + prec_op[-1].split(" --> ")[0]).replace("{SELF} *", "")
             term = "When '" + precs + "' then '" + removeParentheses(op) + "' causes '" + removeParentheses(term.split(" =/> ")[1]) + "'"
     term = term.replace(" --> [", " hasproperty ").replace("]","").replace("[","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
-    return term
+    return term.replace(" + ", " ")
 
 def Term_Embedded(T):
     return get_embedding_robust(Term_AsSentence(T).replace("-"," ").replace("_"," "))
