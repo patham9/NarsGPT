@@ -314,7 +314,7 @@ def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, Im
     p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
     if s == "" or p == "" or s == p:
         return False, currentTime, sentence
-        sentence = f"<{s} --> [{p}]>" + punctuation_tv
+    sentence = f"<{s} --> [{p}]>" + punctuation_tv
     _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
     return True, currentTime, sentence
 
@@ -411,3 +411,39 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
         del memory[k]
     for (k, v) in additions:
         memory[k] = v
+
+def Memory_inject_commands(RET_DICT, inp, buf, currentTime, memory, atoms, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
+    AlreadyExecuted = set([])
+    for x in cmd:
+        if len(x) < 3:
+            continue
+        if x[1] == "." and x[2] == " ": #1. Deduce( (it often outputs in a list like that)
+            x = " ".join(x.split(" ")[1:])
+        if "#" in x:
+            x = x.split("#")[0].strip()
+        if x in AlreadyExecuted or "hasproperty none" in x.lower() or "isa none" in x.lower() \
+                                or "none hasproperty" in x.lower() or "none isa" in x.lower(): #avoids some none calls
+            continue
+        AlreadyExecuted.add(x)
+        truth = (1.0, 0.9)
+        systemQuestion = x.startswith("Question(")
+        if userQuestion or systemQuestion:
+            if PrintAnswer:
+                print(x)
+        isNegated = False
+        if x.startswith("NegatedRelationClaim") or x.startswith("NegatedPropertyClaim"):
+            isNegated = True
+            x = x[7:].replace("  ", " ") #.replace('"', "").replace("'", "")
+            truth = (0.0, 0.9)
+        if x.startswith("RelationClaim") or x.startswith("PropertyClaim"):
+            x = x.replace("  ", " ") #.replace('"', "").replace("'", "")
+        isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
+        if isInput and ")" in x:
+            sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
+            digested, currentTime, retsentence = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
+            if digested and PrintAnswer:
+                printsentence = retsentence if isInput else x
+                print(printsentence)
+    if userQuestion and QuestionPriming:
+        Memory_QuestionPriming(RET_DICT, currentTime, "\n".join(cmd), memory, buf)
+    return currentTime

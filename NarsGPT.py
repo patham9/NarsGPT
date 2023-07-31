@@ -26,7 +26,6 @@ import sys
 from openai.embeddings_utils import get_embedding, cosine_similarity
 from Prompts import *
 from Memory import *
-from Control import *
 import openai
 import string
 import time
@@ -80,7 +79,7 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
         break
     if isQuestion:
         commands = I_You_Exchange("\n".join(commands)).split("\n")
-    curTime = Control_cycle(RET_DICT, inp, buf, currentTime, memory, atoms, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold)
+    curTime = Memory_inject_commands(RET_DICT, inp, buf, currentTime, memory, atoms, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
 
