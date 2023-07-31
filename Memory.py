@@ -288,9 +288,9 @@ def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv,
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime
-    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
-    p = Atomize(Lemmatize(p, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
-    v = Atomize(Lemmatize(v, wordnet.VERB), atoms, wordnet.VERB, atomCreationThreshold)
+    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    p = Atomize(Lemmatize(p, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    v = Atomize(Lemmatize(v, wordnet.VERB), atoms, "VERB", atomCreationThreshold)
     relations.add(v)
     if s == "" or v == "" or p == "":
         return False, currentTime
@@ -306,8 +306,8 @@ def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, Im
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime
-    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, wordnet.NOUN, atomCreationThreshold)
-    p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, wordnet.ADJ, atomCreationThreshold)
+    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
     if s == "" or p == "" or s == p:
         return False, currentTime
     _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)

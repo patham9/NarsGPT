@@ -28,6 +28,7 @@ from Prompts import *
 from Memory import *
 from Control import *
 import openai
+import string
 import time
 
 openai.api_key = "YOUR_KEY"
@@ -104,6 +105,17 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
             print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
         return RET_DICT
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
+        if (" --> " in inp or " <-> " in inp) and " ==> " not in inp and " <=> " not in inp and " =/> " not in inp and " && " not in inp:
+            S, P = inp.split(" --> ") if " --> " in inp else inp.split(" <-> ")
+            for word in [S, P]:
+                terms = [x for x in ''.join(i for i in word if i in string.ascii_letters+'0123456789 ').split(' ') if x != ""]
+                pos = "NOUN"
+                if word == P and " * " in S:
+                    pos = "VERB"
+                if word == P and "[" in P and "]" in P:
+                    pos == "ADJ"
+                for term in terms:
+                    Atomize(term, atoms, pos, 1.0) #1.0 = always create new atom (Narsese encoding is a reference!)
         if QuestionPriming:
             if inp.endswith("?"): #query first
                 query(RET_DICT, currentTime, memory, inp[:-1].strip(), "eternal")
@@ -118,7 +130,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
                     print("Answer: " + answer["term"] + answer["punctuation"] + " {" + str(answer["truth"]["frequency"]) + " " + str(answer["truth"]["confidence"]) + "}" + occurrenceTimeInfo)
         if not inp.endswith("?"):
             Memory_Eternalize(currentTime, memory, eternalizationDistance)
-            Memory_store(filename, memory, currentTime)
+            Memory_store(filename, memory, atoms, currentTime)
         return RET_DICT
     if inp.startswith("*memory"):
         for x in memory.items():
