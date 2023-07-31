@@ -47,7 +47,10 @@ PrintGPTPrompt = False or "PrintGPTPrompt" in sys.argv
 NarseseByONA = True and "NarseseByGPT" not in sys.argv
 QuestionPriming = True and "NoQuestionPriming" not in sys.argv
 TimeHandling = True and "NoTimeHandling" not in sys.argv
-GoalRequiresGrounding = False or "GoalRequiresGrounding" in sys.argv
+GoalRequiresGrounding = True or "GoalRequiresGrounding" in sys.argv #whether the entire statement needs to be grounded, not just atoms
+BeliefRequiresGrounding = False or "BeliefRequiresGrounding" in sys.argv #whether the entire statement needs to be grounded, not just atoms
+AutoGroundNarsese = True and "NoAutoGroundNarsese" not in sys.argv #whether *ground is necessary or Narsese input suffices
+DebugGrounding = False
 
 for x in sys.argv:
     if x.startswith("API_KEY="):
@@ -85,6 +88,17 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
     return curTime
 
 groundings = []
+def ground(narsese):
+    if narsese.endswith(". :|:"):
+        narsese.replace(". :|:", "")
+    if narsese.endswith(".") or narsese.endswith("!") or narsese.endswith("?"):
+        narsese = narsese[:-1]
+    sentence = Term_AsSentence(narsese)
+    if DebugGrounding:
+        print("//Grounded:", narsese," <= ", sentence)
+    embedding = get_embedding_robust(sentence)
+    groundings.append((sentence, embedding))
+
 lastGoal = ""
 def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=False):
     global currentTime, lastGoal, memory, atoms, PrintInputSentence, atomCreationThreshold
@@ -120,6 +134,8 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         if QuestionPriming:
             if inp.endswith("?"): #query first
                 query(RET_DICT, currentTime, memory, inp[:-1].strip(), "eternal")
+        if AutoGroundNarsese:
+            ground(inp)
         ret, currentTime = ProcessInput(RET_DICT, currentTime, memory, inp)
         if "answers" in ret and ret["answers"]:
             answer = ret["answers"][0]
@@ -139,10 +155,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         return RET_DICT
     if inp.startswith("*ground="):
         narsese = inp.split("ground=")[1]
-        sentence = Term_AsSentence(narsese)
-        print("//Grounded:", narsese," <= ", sentence)
-        embedding = get_embedding_robust(sentence)
-        groundings.append((sentence, embedding))
+        ground(narsese)
         return RET_DICT
     if inp.startswith("*time"):
         print(currentTime)
@@ -181,23 +194,23 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
             else:
                 lastGoal = ""
             restore_atomCreationThreshold = atomCreationThreshold
+            if (isGoal and GoalRequiresGrounding) or (not isGoal and BeliefRequiresGrounding):
+                inp_embedding = get_embedding_robust(inp)
+                bestQual = 0.0
+                bestsentence = ""
+                for (sentence, embedding) in groundings:
+                    matchQuality = cosine_similarity(inp_embedding, embedding)
+                    if matchQuality > bestQual:
+                        bestsentence = sentence
+                        bestQual = matchQuality
+                if bestsentence == "":
+                    print("//Sentence isn't grounded, rejected")
+                    return RET_DICT
+                inp = bestsentence
+                if DebugGrounding:
+                    print("//Reinterpreted as grounded sentence:", inp)
             if isGoal:
-                if GoalRequiresGrounding:
-                    inp_embedding = get_embedding_robust(inp)
-                    bestQual = 0.0
-                    bestsentence = ""
-                    for (sentence, embedding) in groundings:
-                        matchQuality = cosine_similarity(inp_embedding, embedding)
-                        if matchQuality > bestQual:
-                            bestsentence = sentence
-                            bestQual = matchQuality
-                    if bestsentence == "":
-                        print("//Goal isn't grounded, rejected")
-                        return RET_DICT
-                    inp = bestsentence
-                    print("//Reinterpreted as grounded goal:", inp)
-                else:
-                    atomCreationThreshold = -0.01 #for goals we do not allow creation of new atoms!
+                atomCreationThreshold = -0.01 #for goals we do not allow creation of new atoms!
             currentTime = PromptProcess(RET_DICT, inp, buf, text + inp + Prompts_belief_end, False, isGoal, PrintAnswer=PrintAnswer)
             atomCreationThreshold = restore_atomCreationThreshold
         else:
