@@ -52,15 +52,10 @@ def Control_cycle(RET_DICT, inp, buf, currentTime, memory, atoms, cmd, userQuest
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested, currentTime = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
+            digested, currentTime, retsentence = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
             if digested and PrintAnswer:
-                printsentence = sentence if isInput else x
-                printsentence = printsentence.replace(", ",",").replace(","," ").replace("_"," ")
-                if PrintTruthValues:
-                    punctuation = "!" if userGoal else "."
-                    print(f"{printsentence}{punctuation} truth={truth}")
-                else:
-                    print(printsentence)
+                printsentence = retsentence if isInput else x
+                print(printsentence)
     if userQuestion and QuestionPriming:
         Memory_QuestionPriming(RET_DICT, currentTime, "\n".join(cmd), memory, buf)
     return currentTime

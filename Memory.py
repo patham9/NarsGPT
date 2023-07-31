@@ -285,32 +285,37 @@ def notIncluded(word, inp):
 relations = set(["isa", "are", "hasproperty"])
 def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
     global relations
+    sentence = ""
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
-        return False, currentTime
+        return False, currentTime, sentence
     s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
     p = Atomize(Lemmatize(p, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
     v = Atomize(Lemmatize(v, wordnet.VERB), atoms, "VERB", atomCreationThreshold)
     relations.add(v)
     if s == "" or v == "" or p == "":
-        return False, currentTime
+        return False, currentTime, sentence
     if v == "isa" or v == "are":
         if s == p:
             return False, currentTime
-        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> {p}>" + punctuation_tv)
+        sentence = f"<{s} --> {p}>" + punctuation_tv
+        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
     else:
-        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<({s} * {p}) --> {v}>" + punctuation_tv)
-    return True, currentTime
+        sentence = f"<({s} * {p}) --> {v}>" + punctuation_tv
+        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
+    return True, currentTime, sentence
 
 def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
+    sentence = ""
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
-        return False, currentTime
+        return False, currentTime, sentence
     s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
     p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
     if s == "" or p == "" or s == p:
         return False, currentTime
-    _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"<{s} --> [{p}]>" + punctuation_tv)
+        sentence = f"<{s} --> [{p}]>" + punctuation_tv
+    _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
     return True, currentTime
 
 lastTime = 0
@@ -321,7 +326,7 @@ def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, 
     if currentTime != lastTime:
         hadRelation = set([])
     if sentence in hadRelation:
-        return False, currentTime
+        return False, currentTime, ""
     lastTime = currentTime
     pieces = [x.strip().replace(" ","_") for x in sentence.split(",")]
     punctuation = "!" if userGoal else "."
@@ -333,7 +338,7 @@ def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, 
             return Relation(RET_DICT, inp, currentTime, memory, atoms, *pieces, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
     else:
         #print("//!!!! Can't form relation:", pieces)
-        return False, currentTime
+        return False, currentTime, ""
 
 def Memory_load(filename):
     memory = {} #the NARS-style long-term memory

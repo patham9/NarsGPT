@@ -225,7 +225,7 @@ def Shell():
             inp = input().rstrip("\n").strip()
         except:
             exit(0)
-        AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=PrintInputSentence)
+        AddInput(inp, PrintAnswer=True, Print=False, PrintInputSentenceOverride=True, PrintInputSentenceOverrideValue=PrintInputSentence)
 
 if __name__ == "__main__":
     Shell()
