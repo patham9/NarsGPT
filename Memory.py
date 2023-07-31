@@ -297,7 +297,7 @@ def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv,
         return False, currentTime, sentence
     if v == "isa" or v == "are":
         if s == p:
-            return False, currentTime
+            return False, currentTime, sentence
         sentence = f"<{s} --> {p}>" + punctuation_tv
         _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
     else:
@@ -313,10 +313,10 @@ def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, Im
     s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
     p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
     if s == "" or p == "" or s == p:
-        return False, currentTime
+        return False, currentTime, sentence
         sentence = f"<{s} --> [{p}]>" + punctuation_tv
     _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
-    return True, currentTime
+    return True, currentTime, sentence
 
 lastTime = 0
 hadRelation = set([])
