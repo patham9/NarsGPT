@@ -177,6 +177,10 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
             for x in memory_view:
                 print(x[0], x[1][:-1])
         return RET_DICT
+    if inp.startswith("*concurrent"):
+        NAR.AddInput(inp)
+        currentTime -= 1
+        return RET_DICT
     if inp.startswith("*"):
         NAR.AddInput(inp)
         return RET_DICT
