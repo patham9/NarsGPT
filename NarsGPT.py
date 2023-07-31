@@ -31,6 +31,7 @@ import string
 import time
 
 openai.api_key = "YOUR_KEY"
+usedModel = "gpt-4"
 relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
 eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
@@ -70,7 +71,7 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     while True:
         try:
-            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            response = openai.ChatCompletion.create(model=usedModel, messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
             commands = response['choices'][0]['message']['content'].split("\n")
         except Exception as e:
             print("Error: API call failed, will try repeating it in 10 seconds!", str(e))
