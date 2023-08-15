@@ -37,7 +37,7 @@ for D in Questions:
     print(send_prompt)
     while True:
         try:
-            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            response = openai.ChatCompletion.create(model='gpt-4', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
             ret = response['choices'][0]['message']['content']
         except:
             print("Error: API call failed, will try repeating it in 10 seconds!")
