@@ -7,33 +7,67 @@ A GPT model as a language channel to build representations for a Non-Axiomatic R
 [![NARS-GPT](https://img.youtube.com/vi/l4rklYGbcTo/0.jpg)](https://www.youtube.com/watch?v=l4rklYGbcTo "Integrating GPT and NARS (gptONA)")
 
 **Features:**
-- Natural open-ended Q&A interaction with the user
-- System has no initial knowledge (unless ImportGPTKnowledge and ConsiderGPTKnowledge flag is set) but you can simply teach it
-- System will make inferences through ONA and will raise questions
+
+- Interactive NARS-style declarative inference and question answering with long-term memory storage
 - System can point out which memory items support a specific conclusion, and how certain it is
+- Seamless interfacing with Narsese input and sensorimotor capabilities of NARS.
+- The system is able to build and maintain long-term, a useful and evidentally supported set of beliefs through reasoning.
+- NARS-GPT supports various types of reasoning, truth maintenance and automated memory management, which can be beneficial for adaptive autonomous agents.
+- It applies decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
 
 **Architecture:**
 
 ![gptONA Architecture](https://user-images.githubusercontent.com/8284677/234759143-0fc48767-68cd-44fc-800a-fc7023e11f37.png)
 
 **Technical aspects:**
-- Sentences are stored in logical/structural form as in other NARS implementations.
-- Accurate reasoning with truth calculations are carried out via ONA.
-- Structures: Attention buffer and long-term sentence memory which can go far beyond GPT's context window.
-- The attention buffer is a view of up to k relevant items in ONA's memory decided based on recency, usefulness and relevance to other items in the attention buffer.
-- The long-term memory can be set to be bounded, items with low use counter and last-used stamp the longest ago will be removed first.
-- Certainty values provide a summary of NAL truth values (based on truth-expectation formula) which is relevant in Q&A and in decision making.
+- OpenNARS for Applications was chosen as the NARS implementation as the project seems to be the most mature implementation of NARS for large-scale experiments.
+- GPT-4 was chosen for NARS-GPT since it is the most capable LLM by OpenAI that is usable through the public API.
+- Sentences are stored in logical/structural form in the memory of NARS whereby introduction of new similar terms is avoided through the usage of embedding similarity of terms.
+- Accurate reasoning with Non-Axiomatic Logic truth calculations are carried out with NARS.
+- The long-term memory of NARS-GPT does not have a context window size limitation.
+- The memory of NARS-GPT can nevertheless be bounded if users desire so, whereby a maximum amount of items is kept (the others evicted) by a usefulness ranking (how often an item was accessed and how recently).
+- The attention buffer is a view of up to k relevant items in NARS's memory decided based on recency and relevance to other items in the attention buffer, whereby recency is based on the time stamp of when the knowledge item was created, and relevance is decided by cosine similarity of the sentence embedding to the questions's embedding.
+- By NARS-GPT mentioned certainty values are NAL confidence values, whereby if frequency value is smaller than $0.5$ the belief appears in negated formulation in the prompt.
 
-**Compared to other GPT with Long-term memory projects such as AutoGPT:**
+**Installation:**
 
-- Having the AI maintain a useful and evidentally supported set of beliefs through reasoning is the goal in this project, invoking software tools will come later.
-- gptONA is a proper solution for reasoning, truth maintenance and automated memory management, to build more effective adaptive systems which could operate autonomously.
-- It builds on decades of knowledge about reasoning under uncertainty, evidence tracking and resource allocation in Non-Axiomatic Reasoning Systems.
+Run build.sh (which compiles & runs the ONA implementation of NARS with Clang or GCC)
+and also install the depencencies via install_python_dependencies.sh
+which will install the OpenAI API and other relevant Python packages.
 
-**Compared to implementing a NARS via GPT:**
+**How to run:**
 
-- This project translates language into the Narsese formal language via GPT and uses ONA for reasoning. This guarantees that conclusions are supported by the evidence and never faulty, and that representations are not ambiguous or redundant which makes belief revision easier when new evidence about a specific relation is presented to the system. Also this system can process Narsese events (dozens of events per second) in addition to the slow English input, which allows NARS sensorimotor capabilities to be utilized.
+```
+python3 NarsGPT.py API_KEY=YOUR_OPENAI_API_KEY
+```
 
-**Already supported:**
-- NARS-style declarative inference and question answering with long-term memory storage
-- Seamless interfacing with Narsese input and sensorimotor
+**Evaluation:**
+
+Relevant folders:
+
+```
+./NARS-GPT/Evaluation_babI_qa16/
+./NARS-GPT/Evaluation_INT_inf/
+```
+
+Side note: As different prompts can lead to different results which would make comparisons less fair,
+these scripts ensure the prompts to GPT-4 and NARS-GPT for the task are compatible.
+To run vanilla GPT-4 for evaluation on babI for comparison purposes, use the baseline branch.
+
+In each of these folders, run:
+
+```
+python3 1_GenerateTestOutput.py API_KEY=YOUR_OPENAI_API_KEY
+```
+(which runs the model on the QA16 part of babI specified in line 11 of the script and generates TestOutput.json including input, actual and expected output for each example)
+
+```
+python3 2_EvaluateTestOutput.py API_KEY=YOUR_OPENAI_API_KEY
+```
+(which judges output correctness and generates Scores.json, and in addition Correct.json and Incorrect.json with the examples determined as correct and incorrect)
+
+Scores.json then contains the relevant numbers, in terms of Correct amount, Incorrect amount, and the correctness ratio.
+
+Please note that both scripts can be interrupted, with the resulting .json files reflecting the current state.
+That way one can also choose to use part of the dataset (say 100-200 examples) for replication.
+
