@@ -31,11 +31,11 @@ import string
 import time
 
 openai.api_key = "YOUR_KEY"
-usedModel = "gpt-4"
+usedModel = "gpt-4" #'gpt-3.5-turbo'
 relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
 eternalizationDistance = 3  #how long items are treated as events before contributing to generic belief evidence in long-term memory
-atomCreationThreshold = 0.88 #how different a new word needs to be to existing of same type to become a new atom
+atomCreationThreshold = 0.95 #how different a new word needs to be to existing of same type to become a new atom
 filename = "mem.json" #the system's memory file
 IYouExchange = True or "NoIYouExchange" in sys.argv #whether I and you, my and your is exchanged in communication
 ConsiderGPTKnowledge = False or "ConsiderGPTKnowledge" in sys.argv #Whether it should be allowed to consider GPT's knowledge too for answering a question

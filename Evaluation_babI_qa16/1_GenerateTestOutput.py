@@ -1,15 +1,16 @@
 import sys
 import os
+
+lines = ""#"../../babI/task_16_v1-2/en-valid/qa16_test.txt"
+with open("../../babI/task_16_v1-2/en-valid/qa16_train.txt") as f:
+    lines = f.read().split("\n")
+
 cwd = os.getcwd()
 sys.path.append(cwd + "/../")
 os.chdir(cwd + "/../")
 from NarsGPT import *
 os.chdir(cwd)
 import json
-
-lines = ""
-with open("/home/tc/babI/tasks_1-20_v1-2/en-valid/qa16_train.txt") as f:
-    lines = f.read().split("\n")
 
 lastnum = -1
 examples = []

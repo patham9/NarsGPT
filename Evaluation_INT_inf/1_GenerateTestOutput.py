@@ -1,5 +1,7 @@
 import sys
 import os
+with open("INT_Inf_benchmarkTest.csv") as f:
+    lines = f.read().split("\n")
 cwd = os.getcwd()
 sys.path.append(cwd + "/../")
 os.chdir(cwd + "/../")
@@ -9,13 +11,12 @@ import json
 
 Line_Input_Output_ExpectedOutput = []
 Line = 1
-while True:
-    try:
-        line = input()
-    except EOFError:
-        exit(0)
+for line in lines:
     parts = ",".join(line.split(",")[1:]).split(",,,,,,")
-    Input, expectedOutput = parts
+    try:
+        Input, expectedOutput = parts
+    except:
+        continue
     Input = Input.strip()
     expectedOutput = expectedOutput.strip()
     if expectedOutput != "":

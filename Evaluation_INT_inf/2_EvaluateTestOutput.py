@@ -7,7 +7,7 @@ for x in sys.argv:
     if x.startswith("API_KEY="):
         openai.api_key = x.split("API_KEY=")[1]
 
-with open("TestOutput.json") as json_file:
+with open("../TestOutput.json") as json_file:
     ListOfDicts, _ = json.load(json_file)
 
 # {"Line": Line, "Input": Input, "actualOutput": actualOutput, "expectedOutput": expectedOutput}
@@ -36,8 +36,8 @@ for D in Questions:
     send_prompt = PROMPT.replace("_QUESTION_", Input).replace("_ACTUAL_OUTPUT_",actualOutput).replace("_EXPECTED_OUTPUT_",expectedOutput)
     print(send_prompt)
     while True:
-        try:
-            response = openai.ChatCompletion.create(model='gpt-4', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+        try:                                            #'gpt-4'
+            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
             ret = response['choices'][0]['message']['content']
         except:
             print("Error: API call failed, will try repeating it in 10 seconds!")
