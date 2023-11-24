@@ -1,4 +1,4 @@
-pip3 install openai
+pip3 install openai==0.28.1
 pip3 install matplotlib
 pip3 install plotly
 pip3 install pandas
