@@ -23,14 +23,16 @@
  * """
 
 import sys
-from openai.embeddings_utils import get_embedding, cosine_similarity
 from Prompts import *
 from Memory import *
 import openai
 import string
 import time
+import os
 
 openai.api_key = "YOUR_KEY"
+if "OPENAI_API_KEY" in os.environ:
+    openai.api_key = os.environ["OPENAI_API_KEY"]
 usedModel = "gpt-4" #'gpt-3.5-turbo'
 relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see

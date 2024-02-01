@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  * """
 
-from openai.embeddings_utils import get_embedding, cosine_similarity
 from ast import literal_eval
 from os.path import exists
 import json
@@ -40,6 +39,12 @@ from nltk import WordNetLemmatizer
 from nltk.corpus import wordnet
 nltk.download('wordnet', quiet=True)
 nltk.download('omw-1.4', quiet=True)
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def get_embedding(text, model="text-embedding-ada-002"): # model = "deployment_name"
+    return client.embeddings.create(input = [text], model=model).data[0].embedding
 
 Print = False
 def SetPrint(Flag):
