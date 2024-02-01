@@ -1,12 +1,9 @@
 import json
-import openai
+from openai import OpenAI
 import time
 import sys
 
-for x in sys.argv:
-    if x.startswith("API_KEY="):
-        openai.api_key = x.split("API_KEY=")[1]
-
+client = OpenAI()
 with open("../TestOutput.json") as json_file:
     ListOfDicts = json.load(json_file)
 
@@ -37,8 +34,8 @@ for D in Questions:
     print(send_prompt)
     while True:
         try:                                            #'gpt-4'
-            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-            ret = response['choices'][0]['message']['content']
+            response = client.chat.completions.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            ret = response.choices[0].message.content
         except:
             print("Error: API call failed, will try repeating it in 10 seconds!")
             time.sleep(10) #wait 10 seconds

@@ -1,7 +1,8 @@
 import NarsGPT as NAR
-import openai
+from openai import OpenAI
 import time
 
+client = NAR.getClient()
 prompt="""
 The task: __TASK__
 To solve it, ask a question about information you need.
@@ -24,8 +25,8 @@ def query(task):
     prompt = build_prompt(task)
     while True:
         try:
-            response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[ {"role": "user", "content": prompt}], max_tokens=200, temperature=0)
-            ret = response['choices'][0]['message']['content']
+            response = client.chat.completions.create(model='gpt-4', messages=[ {"role": "user", "content": prompt}], max_tokens=200, temperature=0)
+            ret = response.choices[0].message.content
             return ret
         except Exception as e:
             print("Error: API call failed, will try repeating it in 10 seconds!", str(e))

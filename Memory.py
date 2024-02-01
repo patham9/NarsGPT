@@ -35,6 +35,7 @@ os.chdir(cwd)
 from Truth import *
 import time
 import nltk
+import numpy as np
 from nltk import WordNetLemmatizer
 from nltk.corpus import wordnet
 nltk.download('wordnet', quiet=True)
@@ -43,7 +44,7 @@ nltk.download('omw-1.4', quiet=True)
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-def get_embedding(text, model="text-embedding-ada-002"): # model = "deployment_name"
+def get_embedding(client, text, model="text-embedding-3-large"): # model = "deployment_name"
     return client.embeddings.create(input = [text], model=model).data[0].embedding
 
 Print = False
@@ -65,12 +66,12 @@ def MergeInto(RET_DICT, ret):
         else:
             RET_DICT[key] = ret[key]
 
-def get_embedding_robust(inp):
+def get_embedding_robust(client, inp):
     while True:
         try:
-            ret = get_embedding(inp)
-        except:
-            print("//Failed get embedding, will retry API call in 10s")
+            ret = get_embedding(client, inp)
+        except Exception as e:
+            print("//Failed get embedding, will retry API call in 10s", e)
             time.sleep(10)
             continue
         break
@@ -101,12 +102,12 @@ def Term_AsSentence(T):
     term = term.replace(" --> [", " hasproperty ").replace("]","").replace("[","").replace(" --> ", " isa ").replace(" &/ ", " then ").replace(" =/> ", " causes ")
     return term.replace(" + ", " ")
 
-def Term_Embedded(T):
-    return get_embedding_robust(Term_AsSentence(T).replace("-"," ").replace("_"," "))
+def Term_Embedded(client, T):
+    return get_embedding_robust(client, Term_AsSentence(T).replace("-"," ").replace("_"," "))
 
-def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
+def RetrieveQuestionRelatedBeliefs(client, memory, view, inp, max_LTM_retrievals=30):
     primed = {}
-    qu_embed = get_embedding_robust(inp)
+    qu_embed = get_embedding_robust(client, inp)
     for m in list(memory.items()):
         if m not in view:
             matchQuality = cosine_similarity(qu_embed, m[1][4])
@@ -119,19 +120,19 @@ def RetrieveQuestionRelatedBeliefs(memory, view, inp, max_LTM_retrievals=30):
     primed = [(x[0],x[1][1]) for x in primed]
     return list(reversed(primed))
 
-def Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion = None):
+def Memory_view(client, memory, relevantViewSize, recentViewSize, inpQuestion = None):
     view=[]
     recent_item_list = list(memory.items())
     #find recentViewSize items:
     recent_item_list.sort(key=lambda x: -x[1][0])
     view += reversed(recent_item_list[0:recentViewSize]) #newer comes later in prompt
     if inpQuestion is not None:
-        view = RetrieveQuestionRelatedBeliefs(memory, view, inpQuestion, relevantViewSize) + view
+        view = RetrieveQuestionRelatedBeliefs(client, memory, view, inpQuestion, relevantViewSize) + view
     return view
 
-def Memory_generate_prompt(currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None):
+def Memory_generate_prompt(client, currentTime, memory, prompt_start, prompt_end, relevantViewSize, recentViewSize, inpQuestion = None):
     prompt_memory = ""
-    buf = Memory_view(memory, relevantViewSize, recentViewSize, inpQuestion)
+    buf = Memory_view(client, memory, relevantViewSize, recentViewSize, inpQuestion)
     if len(buf) == 0:
         prompt_memory = "EMPTY!"
     for i,x in enumerate(buf):
@@ -163,10 +164,10 @@ def Lemmatize(word, tag):
                 return "isa"
     return ret
 
-def Atomize(atom, atoms, pos, atomCreationThreshold):
+def Atomize(client, atom, atoms, pos, atomCreationThreshold):
     splitter = ";;"
     key = atom + splitter + str(pos)
-    atomembedding = atoms[key] if key in atoms else get_embedding_robust(atom)
+    atomembedding = atoms[key] if key in atoms else get_embedding_robust(client, atom)
     closest_atom = None
     closest_quality = None
     for key2 in atoms:
@@ -198,7 +199,7 @@ def Allow_requery_if_not_in_ONA(RET_DICT, term, time):
             if "truth" not in answer and answer["term"] == "None":
                 retrieved.remove(term, time)
 
-def query(RET_DICT, currentTime, memory, term, time):
+def query(client, RET_DICT, currentTime, memory, term, time):
     global retrieved
     if time != "eternal":
         return currentTime
@@ -208,7 +209,7 @@ def query(RET_DICT, currentTime, memory, term, time):
         (_, _, (f, c), stamp, _) = memory[(term, time)]
         NAR.AddInput("*stampimport=" + str(stamp), Print=Print)
         if time == "eternal":
-            _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"{term}. {{{f} {c}}}")
+            _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, f"{term}. {{{f} {c}}}")
     if "?1" in term: #simple query matching
         parts = term.split("?1")
         bestTerm, bestTruth, bestTime, bestStamp = (None, (0.0, 0.5), "eternal", [])
@@ -226,11 +227,11 @@ def query(RET_DICT, currentTime, memory, term, time):
             retrieved.add((bestTerm, bestTime))
             NAR.AddInput("*stampimport=" + str(bestStamp), Print=Print)
             if bestTime == "eternal":
-                _, currentTime = ProcessInput(RET_DICT, currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
+                _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, f"{bestTerm}. {{{bestTruth[0]} {bestTruth[1]}}}")
     retrieved.add((term, time))
     return currentTime
 
-def ProcessInput(RET_DICT, currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
+def ProcessInput(client, RET_DICT, currentTime, memory, inputforNAR, backups = ["input", "answers", "derivations"]):
     ret = NAR.AddInput(inputforNAR, Print=Print)
     MergeInto(RET_DICT, ret)
     TestedCausalHypotheses = []
@@ -261,7 +262,7 @@ def ProcessInput(RET_DICT, currentTime, memory, inputforNAR, backups = ["input",
                 stamp = derivation["Stamp"]
                 if str(time).isdigit():
                     time = int(time)
-                currentTime = query(RET_DICT, currentTime, memory, term, time)
+                currentTime = query(client, RET_DICT, currentTime, memory, term, time)
                 f2 = float(derivation["truth"]["frequency"])
                 c2 = float(derivation["truth"]["confidence"])
                 usefulnessAddition = 1000000 if "Priority" not in derivation or derivation["Priority"] == 1.0 else 1
@@ -274,7 +275,7 @@ def ProcessInput(RET_DICT, currentTime, memory, inputforNAR, backups = ["input",
                     if (term, "eternal") in memory:
                         embedding = memory[(term, "eternal")][4]
                     else:
-                        embedding = Term_Embedded(term)
+                        embedding = Term_Embedded(client, term)
                     #now where we got the embedding too, make entry to memory:
                     memory[(term, time)] = (currentTime, usefulnessAddition, (f2, c2), stamp, embedding)
     if ">." in inputforNAR or "! :|:" in inputforNAR or ". :|:" in inputforNAR:
@@ -288,15 +289,15 @@ def notIncluded(word, inp):
     return word.replace("_", " ") not in inp.replace(". "," ").replace("'","")
 
 relations = set(["isa", "are", "hasproperty"])
-def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
+def Relation(client, RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
     global relations
     sentence = ""
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, v, p)
         return False, currentTime, sentence
-    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
-    p = Atomize(Lemmatize(p, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
-    v = Atomize(Lemmatize(v, wordnet.VERB), atoms, "VERB", atomCreationThreshold)
+    s = Atomize(client, Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    p = Atomize(client, Lemmatize(p, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    v = Atomize(client, Lemmatize(v, wordnet.VERB), atoms, "VERB", atomCreationThreshold)
     relations.add(v)
     if s == "" or v == "" or p == "":
         return False, currentTime, sentence
@@ -304,28 +305,28 @@ def Relation(RET_DICT, inp, currentTime, memory, atoms, s, v, p, punctuation_tv,
         if s == p:
             return False, currentTime, sentence
         sentence = f"<{s} --> {p}>" + punctuation_tv
-        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
+        _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, sentence)
     else:
         sentence = f"<({s} * {p}) --> {v}>" + punctuation_tv
-        _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
+        _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, sentence)
     return True, currentTime, sentence
 
-def Property(RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
+def Property(client, RET_DICT, inp, currentTime, memory, atoms, s, p, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold):
     sentence = ""
     if not ImportGPTKnowledge and (notIncluded(s, inp) or notIncluded(p, inp)):
         #print("//!!!! filtered out", s, "hasproperty", p)
         return False, currentTime, sentence
-    s = Atomize(Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
-    p = Atomize(Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
+    s = Atomize(client, Lemmatize(s, wordnet.NOUN), atoms, "NOUN", atomCreationThreshold)
+    p = Atomize(client, Lemmatize(p, wordnet.ADJ), atoms, "ADJ", atomCreationThreshold)
     if s == "" or p == "" or s == p:
         return False, currentTime, sentence
     sentence = f"<{s} --> [{p}]>" + punctuation_tv
-    _, currentTime = ProcessInput(RET_DICT, currentTime, memory, sentence)
+    _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, sentence)
     return True, currentTime, sentence
 
 lastTime = 0
 hadRelation = set([])
-def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
+def Memory_digest_sentence(client, RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
     global lastTime, hadRelation
     #print(">>>>", sentence)
     if currentTime != lastTime:
@@ -338,9 +339,9 @@ def Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, 
     punctuation_tv = f"{punctuation} :|: {{{truth[0]} {truth[1]}}}" if TimeHandling else f"{punctuation} {{{truth[0]} {truth[1]}}}"
     if len(pieces) == 3:
         if pieces[1] == "hasproperty":
-            return Property(RET_DICT, inp, currentTime, memory, atoms, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
+            return Property(client, RET_DICT, inp, currentTime, memory, atoms, pieces[0], pieces[2], punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
         else:
-            return Relation(RET_DICT, inp, currentTime, memory, atoms, *pieces, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
+            return Relation(client, RET_DICT, inp, currentTime, memory, atoms, *pieces, punctuation_tv, ImportGPTKnowledge, atomCreationThreshold)
     else:
         #print("//!!!! Can't form relation:", pieces)
         return False, currentTime, ""
@@ -370,7 +371,7 @@ def Memory_store(filename, memory, atoms, currentTime):
     with open(atomfile, 'w') as f:
         json.dump(atoms, f)
 
-def Memory_QuestionPriming(RET_DICT, currentTime, cmd, memory, buf):
+def Memory_QuestionPriming(client, RET_DICT, currentTime, cmd, memory, buf):
     #1. get all memory index references
     indexrefs = [x+" " for x in cmd.replace("i=", "item ").split("item ")]
     indices=[]
@@ -391,7 +392,7 @@ def Memory_QuestionPriming(RET_DICT, currentTime, cmd, memory, buf):
     for index in indices:
         if index >= 0 and index < len(buf):
             item = buf[index]
-            query(RET_DICT, currentTime, memory, item[0][0], item[0][1])
+            query(client, RET_DICT, currentTime, memory, item[0][0], item[0][1])
             
 def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     deletes = []
@@ -417,7 +418,7 @@ def Memory_Eternalize(currentTime, memory, eternalizationDistance):
     for (k, v) in additions:
         memory[k] = v
 
-def Memory_inject_commands(RET_DICT, inp, buf, currentTime, memory, atoms, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
+def Memory_inject_commands(client, RET_DICT, inp, buf, currentTime, memory, atoms, cmd, userQuestion, userGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold):
     AlreadyExecuted = set([])
     for x in cmd:
         if len(x) < 3:
@@ -445,10 +446,10 @@ def Memory_inject_commands(RET_DICT, inp, buf, currentTime, memory, atoms, cmd, 
         isInput = x.startswith("RelationClaim(") or x.startswith("PropertyClaim(")
         if isInput and ")" in x:
             sentence = x.split("(")[1].split(")")[0].replace('"','').replace("'","").replace(".", "").lower()
-            digested, currentTime, retsentence = Memory_digest_sentence(RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
+            digested, currentTime, retsentence = Memory_digest_sentence(client, RET_DICT, inp, currentTime, memory, atoms, sentence, truth, userGoal, PrintMemoryUpdates, TimeHandling, ImportGPTKnowledge, atomCreationThreshold) #currentTime updated
             if digested and PrintAnswer:
                 printsentence = retsentence if isInput else x
                 print(printsentence)
     if userQuestion and QuestionPriming:
-        Memory_QuestionPriming(RET_DICT, currentTime, "\n".join(cmd), memory, buf)
+        Memory_QuestionPriming(client, RET_DICT, currentTime, "\n".join(cmd), memory, buf)
     return currentTime

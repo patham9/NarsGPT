@@ -25,14 +25,11 @@
 import sys
 from Prompts import *
 from Memory import *
-import openai
+from openai import OpenAI
 import string
 import time
-import os
 
-openai.api_key = "YOUR_KEY"
-if "OPENAI_API_KEY" in os.environ:
-    openai.api_key = os.environ["OPENAI_API_KEY"]
+client = OpenAI()
 usedModel = "gpt-4" #'gpt-3.5-turbo'
 relevantViewSize = 30      #how many relevant (judged by statement embedding) ONA memory items GPT can see
 recentViewSize = 10        #how many recent (judged by lastUsed) ONA memory items GPT can see
@@ -54,13 +51,9 @@ BeliefRequiresGrounding = False or "BeliefRequiresGrounding" in sys.argv #whethe
 AutoGroundNarsese = True and "NoAutoGroundNarsese" not in sys.argv #whether *ground is necessary or Narsese input suffices
 DebugGrounding = False
 
-for x in sys.argv:
-    if x.startswith("API_KEY="):
-        openai.api_key = x.split("API_KEY=")[1]
 (memory, atoms, currentTime, maxBaseId) = Memory_load(filename) #the ONA memory
 NAR.AddInput("*currenttime=" + str(currentTime))
 NAR.AddInput("*stampid=" + str(maxBaseId + 1))
-
 
 def I_You_Exchange(answer):
     if not IYouExchange:
@@ -76,8 +69,8 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
     if PrintGPTPrompt: print("vvvvSTART PROMPT", send_prompt, "\n^^^^END PROMPT")
     while True:
         try:
-            response = openai.ChatCompletion.create(model=usedModel, messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
-            commands = response['choices'][0]['message']['content'].split("\n")
+            response = client.chat.completions.create(model=usedModel, messages=[ {"role": "user", "content": send_prompt}], max_tokens=200, temperature=0)
+            commands = response.choices[0].message.content.split("\n")
         except Exception as e:
             print("Error: API call failed, will try repeating it in 10 seconds!", str(e))
             time.sleep(10) #wait 10 seconds
@@ -85,7 +78,7 @@ def PromptProcess(RET_DICT, inp, buf, send_prompt, isQuestion, isGoal=False, Pri
         break
     if isQuestion:
         commands = I_You_Exchange("\n".join(commands)).split("\n")
-    curTime = Memory_inject_commands(RET_DICT, inp, buf, currentTime, memory, atoms, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold)
+    curTime = Memory_inject_commands(client, RET_DICT, inp, buf, currentTime, memory, atoms, commands, isQuestion, isGoal, PrintAnswer, PrintMemoryUpdates, PrintTruthValues, QuestionPriming, TimeHandling, ImportGPTKnowledge, atomCreationThreshold)
     RET_DICT["GPT_Answer"] = "\n".join(commands)
     return curTime
 
@@ -98,7 +91,7 @@ def ground(narsese):
     sentence = Term_AsSentence(narsese)
     if DebugGrounding:
         print("//Grounded:", narsese," <= ", sentence)
-    embedding = get_embedding_robust(sentence)
+    embedding = get_embedding_robust(client, sentence)
     groundings.append((sentence, embedding))
 
 lastGoal = ""
@@ -117,9 +110,9 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         return RET_DICT
     if inp.startswith("*prompt"):
         if inp.endswith("?"):
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1])[1])
+            print(Memory_generate_prompt(client, currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*prompt=")[1])[1])
         else:
-            print(Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
+            print(Memory_generate_prompt(client, currentTime, memory, "","", relevantViewSize, recentViewSize)[1])
         return RET_DICT
     if NarseseByONA and (inp.startswith("<") or inp.startswith("(") or " :|:" in inp):
         if (" --> " in inp or " <-> " in inp) and " ==> " not in inp and " <=> " not in inp and " =/> " not in inp and " && " not in inp:
@@ -132,13 +125,13 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
                 if word == P and "[" in P and "]" in P:
                     pos == "ADJ"
                 for term in terms:
-                    Atomize(term, atoms, pos, 1.0) #1.0 = always create new atom (Narsese encoding is a reference!)
+                    Atomize(client, term, atoms, pos, 1.0) #1.0 = always create new atom (Narsese encoding is a reference!)
         if QuestionPriming:
             if inp.endswith("?"): #query first
-                query(RET_DICT, currentTime, memory, inp[:-1].strip(), "eternal")
+                query(client, RET_DICT, currentTime, memory, inp[:-1].strip(), "eternal")
         if AutoGroundNarsese:
             ground(inp)
-        ret, currentTime = ProcessInput(RET_DICT, currentTime, memory, inp)
+        ret, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, inp)
         if "answers" in ret and ret["answers"]:
             answer = ret["answers"][0]
             if Print == False:
@@ -171,11 +164,11 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         return RET_DICT
     if inp.startswith("*buffer"):
         if inp.endswith("?"):
-            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1])[0]
+            memory_view = Memory_generate_prompt(client, currentTime, memory, "","", relevantViewSize, recentViewSize, inp[:-1].split("*buffer=")[1])[0]
             for x in memory_view:
                 print(x[0], x[1][:-1])
         else:
-            memory_view = Memory_generate_prompt(currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
+            memory_view = Memory_generate_prompt(client, currentTime, memory, "","", relevantViewSize, recentViewSize)[0]
             for x in memory_view:
                 print(x[0], x[1][:-1])
         return RET_DICT
@@ -188,12 +181,12 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
         return RET_DICT
     inp = inp.lower()
     if inp.endswith("?"):
-        buf, text = Memory_generate_prompt(currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
+        buf, text = Memory_generate_prompt(client, currentTime, memory, Prompts_question_start, "\nThe question: ", relevantViewSize, recentViewSize, inp)
         send_prompt = text + inp[:-1] + (Prompts_question_end_alternative if ConsiderGPTKnowledge else Prompts_question_end)
         currentTime = PromptProcess(RET_DICT, inp, buf, send_prompt, True, PrintAnswer=PrintAnswer)
     else:
         if len(inp) > 0 and not inp.isdigit():
-            buf, text = Memory_generate_prompt(currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
+            buf, text = Memory_generate_prompt(client, currentTime, memory, Prompts_belief_start, "\nThe sentence: ", relevantViewSize, recentViewSize)
             isGoal = inp.endswith("!")
             if isGoal:
                 lastGoal = inp
@@ -201,7 +194,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
                 lastGoal = ""
             restore_atomCreationThreshold = atomCreationThreshold
             if (isGoal and GoalRequiresGrounding) or (not isGoal and BeliefRequiresGrounding):
-                inp_embedding = get_embedding_robust(inp)
+                inp_embedding = get_embedding_robust(client, inp)
                 bestQual = 0.0
                 bestsentence = ""
                 for (sentence, embedding) in groundings:
@@ -220,7 +213,7 @@ def AddInput(inp, PrintAnswer=True, Print=True, PrintInputSentenceOverride=True,
             currentTime = PromptProcess(RET_DICT, inp, buf, text + inp + Prompts_belief_end, False, isGoal, PrintAnswer=PrintAnswer)
             atomCreationThreshold = restore_atomCreationThreshold
         else:
-            _, currentTime = ProcessInput(RET_DICT, currentTime, memory, "1" if len(inp) == 0 else inp)
+            _, currentTime = ProcessInput(client, RET_DICT, currentTime, memory, "1" if len(inp) == 0 else inp)
         Memory_Eternalize(currentTime, memory, eternalizationDistance)
         Memory_store(filename, memory, atoms, currentTime)
     return RET_DICT
@@ -248,3 +241,6 @@ def Shell():
 
 if __name__ == "__main__":
     Shell()
+
+def getClient():
+    return client
